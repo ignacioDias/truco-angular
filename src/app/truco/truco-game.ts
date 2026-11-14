@@ -5,6 +5,11 @@ import { Card } from './card';
 type GameStatus = 'waiting' | 'playing' | 'finished';
 type EnvidoCall = 'none' | 'envido' | 'dobleEnvido' | 'realEnvido' | 'faltaEnvido';
 type TrucoCall = 'none' | 'truco' | 'reTruco' | 'valeCuatro';
+type PlayedCards = [
+  [Card | null, Card | null],
+  [Card | null, Card | null],
+  [Card | null, Card | null],
+];
 
 export class TrucoGame {
   private deck: Deck = new Deck();
@@ -13,6 +18,7 @@ export class TrucoGame {
   private player2: Player = {id: 0, name: 'Ellos', hand: [], points: 0};
   private currentTurn: number = 1;
   private gameStatus: GameStatus = 'waiting';
+  private currentPlayedCards: PlayedCards = [[null, null], [null, null], [null, null]];
   private currentEnvido: EnvidoCall = 'none';
   private currentTruco: TrucoCall = 'none';
   private currentPlayerWithEnvido: number = -1;
@@ -26,6 +32,7 @@ export class TrucoGame {
   public newHand(): void {
     this.currentEnvido = 'none';
     this.currentTruco = 'none';
+    this.currentPlayedCards = [[null, null], [null, null], [null, null]];
     this.currentPlayerWithEnvido = this.currentRound % 2;
     this.currentPlayerWithTrucoCall = this.currentRound % 2;
     this.currentRound = 1;
@@ -53,7 +60,10 @@ export class TrucoGame {
     return null;
   }
 
-  public callTruco(trucoCall: TrucoCall): void {
+  public callTruco(trucoCall: TrucoCall, userId: number): void {
+    if(this.currentPlayerWithTrucoCall !== userId) {
+      throw new Error("It's not your turn to call Truco");
+    }
     if(!this.checkTrucoCallValidity(trucoCall)) {
       throw new Error("Invalid Truco call");
     }
@@ -71,7 +81,16 @@ export class TrucoGame {
     return callOrder[trucoCall] > callOrder[this.currentTruco];
   }
 
-  public callEnvido(envidoCall: EnvidoCall): void {
+  public callEnvido(envidoCall: EnvidoCall, userId: number): void {
+    if(this.currentPlayerWithEnvido !== userId) {
+      throw new Error("It's not your turn to call Envido");
+    }
+    if(this.currentRound > 1) {
+      throw new Error("Envido can only be called in the first round");
+    }
+    if(envidoCall === 'dobleEnvido' && this.currentEnvido !== 'envido') {
+      throw new Error("Invalid Envido call");
+    }
     if(!this.checkEnvidoCallValidity(envidoCall)) {
       throw new Error("Invalid Envido call");
     }
