@@ -12,6 +12,7 @@ type PlayedCards = [
 ];
 
 export class TrucoGame {
+
   private deck: Deck = new Deck();
   private pointsRequiredToWin: 15 | 30 = 30;
   private player1: Player = {id: 1, name: 'Nos', hand: [], points: 0};
@@ -29,7 +30,20 @@ export class TrucoGame {
     this.pointsRequiredToWin = points;
   }
 
-  public newHand(): void {
+  public setGameStatus(status: GameStatus) {
+    this.gameStatus = status;
+  }
+
+  public nextRound(): void {
+    if(this.currentRound >= 3) {
+      this.currentRound = 1;
+    } else {
+      this.currentRound++;
+    }
+    this.newHand();
+  }
+
+  private newHand(): void {
     this.currentEnvido = 'none';
     this.currentTruco = 'none';
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
@@ -49,6 +63,22 @@ export class TrucoGame {
     const cardsArray = Array.from(cards);
     this.player1.hand = cardsArray.slice(0, 3);
     this.player2.hand = cardsArray.slice(3, 6);
+  }
+
+  public playCard(playerId: number, cardIndex: number): void {
+    if (this.gameStatus !== 'playing') {
+      throw new Error("Game is not in playing status");
+    }
+    if (playerId !== this.currentTurn % 2) {
+      throw new Error("It's not your turn");
+    }
+    const player = playerId === 0 ? this.player2 : this.player1;
+    if (cardIndex < 0 || cardIndex >= player.hand.length) {
+      throw new Error("Invalid card index");
+    }
+    this.currentPlayedCards[this.currentRound - 1][playerId] = player.hand[cardIndex];
+    player.hand.splice(cardIndex, 1);
+    this.currentTurn++;
   }
 
   public getWinner(): Player | null {
