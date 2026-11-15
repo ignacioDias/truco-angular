@@ -16,7 +16,7 @@ export class TrucoGame {
   private pointsRequiredToWin: 15 | 30 = 30;
   private player1: Player = new Player(1, 'Nos');
   private player2: Player = new Player(0, 'Ellos');
-  private currentTurn: number = 1;
+  private currentTurn: number = 0;
   private currentPlayedCards: PlayedCards = [[null, null], [null, null], [null, null]];
   private currentEnvidoCall: EnvidoCall = 'none';
   private currentEnvidoPoints: number = 0;
@@ -25,6 +25,7 @@ export class TrucoGame {
   private currentPlayerWithTrucoCall: number = -1;
   private currentRound: 1 | 2 | 3 = 1;
   private isEnvidoValid: boolean[] = [true, true];
+  private playedCards: boolean[] = [false, false];
 
   constructor(player1Name: string, player2Name: string, pointsRequiredToWin: 15 | 30) {
     this.player1.name = player1Name;
@@ -38,7 +39,7 @@ export class TrucoGame {
 
   public nextRound(): void {
     if(this.currentRound >= 3) {
-      this.isEnvidoValid = [true, true];
+
       this.newHand();
       return
     }
@@ -49,6 +50,9 @@ export class TrucoGame {
     this.currentEnvidoCall = 'none';
     this.currentTruco = 'none';
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
+    this.currentTurn++;
+    this.isEnvidoValid = [true, true];
+    this.playedCards = [false, false];
     this.currentPlayerWithEnvido = this.currentTurn % 2;
     this.currentPlayerWithTrucoCall = this.currentTurn % 2;
     this.currentRound = 1;
@@ -71,10 +75,14 @@ export class TrucoGame {
     if (playerId !== this.currentTurn % 2) {
       throw new Error("It's not your turn");
     }
+    if(this.playedCards[playerId]) {
+      throw new Error("You have already played a card this round");
+    }
     const player = playerId === 0 ? this.player2 : this.player1;
     if (cardIndex < 0 || cardIndex >= player.hand.length) {
       throw new Error("Invalid card index");
     }
+    this.playedCards[playerId] = true;
     this.isEnvidoValid[playerId] = false;
     this.currentPlayedCards[this.currentRound - 1][playerId] = player.hand[cardIndex];
     player.hand.splice(cardIndex, 1);
@@ -98,7 +106,7 @@ export class TrucoGame {
       throw new Error("Invalid Truco call");
     }
     this.currentTruco = trucoCall;
-    this.currentPlayerWithTrucoCall = this.currentTurn % 2;
+    this.currentPlayerWithTrucoCall = this.currentPlayerWithTrucoCall === 0 ? 1 : 0;
   }
 
   private checkTrucoCallValidity(trucoCall: TrucoCall): boolean {
@@ -125,7 +133,7 @@ export class TrucoGame {
       throw new Error("Invalid Envido call");
     }
     this.currentEnvidoCall = envidoCall;
-    this.currentPlayerWithEnvido = this.currentTurn % 2;
+    this.currentPlayerWithEnvido = this.currentPlayerWithEnvido === 0 ? 1 : 0;
     this.currentEnvidoPoints += this.calculateEnvidoPoints(envidoCall);
   }
 
@@ -162,6 +170,7 @@ export class TrucoGame {
       : this.player2;
     const opponent = winner === this.player1 ? this.player2 : this.player1;
     this.addEnvidoPoints(winner, opponent);
+    this.currentEnvidoCall = 'none';
   }
 
   private addEnvidoPoints(player: Player, opponent: Player): void {
