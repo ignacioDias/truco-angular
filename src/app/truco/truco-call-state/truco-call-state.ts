@@ -24,16 +24,13 @@ export class TrucoCallState {
     this.playerToCall = mano;
   }
 
-  public callTruco(
-    trucoCall: TrucoCall,
-    playerId: PlayerId,
-    playedCards: PlayedCards,
-  ): void {
+  public callTruco(trucoCall: TrucoCall, playerId: PlayerId, playedCards: PlayedCards): void {
     if (this.playerToCall !== playerId && this.call !== 'none') {
       throw new Error("It's not your turn to call Truco");
     }
-    if (playedCards[2][0] !== null && playedCards[2][0].numericValue === 4) {
-      throw new Error('You cannot call Truco after a 4 has been played');
+    const opponentCard = playedCards[2][opponentOf(playerId)];
+    if (opponentCard?.numericValue === 4) {
+      throw new Error('You cannot call Truco after the other player played a 4 in the last round');
     }
     if (!this.isValidCall(trucoCall)) {
       throw new Error('Invalid Truco call');

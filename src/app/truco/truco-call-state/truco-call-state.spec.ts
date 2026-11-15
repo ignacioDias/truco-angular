@@ -1,5 +1,5 @@
 import { Card, Suit } from '../card/card';
-import { PlayedCards } from '../truco-types';
+import { PlayedCards, PlayerId, opponentOf } from '../truco-types';
 import { TrucoCallState } from './truco-call-state';
 
 const emptyTable = (): PlayedCards => [
@@ -8,10 +8,18 @@ const emptyTable = (): PlayedCards => [
   [null, null],
 ];
 
-const tableWithFourInThirdRound = (): PlayedCards => [
+const tableWithFourInLastRound = (fourBy: PlayerId): PlayedCards => [
   [null, null],
   [null, null],
+  fourBy === 0
+    ? [new Card(4, Suit.Cups), null]
+    : [null, new Card(4, Suit.Cups)],
+];
+
+const tableWithFourInFirstRound = (): PlayedCards => [
   [new Card(4, Suit.Cups), null],
+  [null, null],
+  [null, null],
 ];
 
 describe('TrucoCallState', () => {
@@ -102,13 +110,46 @@ describe('TrucoCallState', () => {
       );
     });
 
-    it('rejects a call after a 4 was played in the third round', () => {
+    it.each([0, 1] as const)(
+      'rejects a call when player %s played a 4 in the last round',
+      (fourBy) => {
+        const state = new TrucoCallState();
+        state.startNewHand(1);
+
+        expect(() =>
+          state.callTruco('truco', opponentOf(fourBy), tableWithFourInLastRound(fourBy)),
+        ).toThrow(
+          'You cannot call Truco after the other player played a 4 in the last round',
+        );
+      },
+    );
+
+    it('allows a call when the 4 belongs to the caller', () => {
       const state = new TrucoCallState();
       state.startNewHand(1);
 
-      expect(() =>
-        state.callTruco('truco', 1, tableWithFourInThirdRound()),
-      ).toThrow('You cannot call Truco after a 4 has been played');
+      expect(() => state.callTruco('truco', 1, tableWithFourInLastRound(1))).not.toThrow();
+      expect(state.getCall()).toBe('truco');
+    });
+
+    it('allows a call when the 4 was played before the last round', () => {
+      const state = new TrucoCallState();
+      state.startNewHand(1);
+
+      expect(() => state.callTruco('truco', 1, tableWithFourInFirstRound())).not.toThrow();
+    });
+
+    it('allows a call when the opponent played something other than a 4', () => {
+      const state = new TrucoCallState();
+      state.startNewHand(1);
+
+      const table: PlayedCards = [
+        [null, null],
+        [null, null],
+        [new Card(3, Suit.Cups), null],
+      ];
+
+      expect(() => state.callTruco('truco', 1, table)).not.toThrow();
     });
 
     it('keeps the previous state when a call is rejected', () => {
