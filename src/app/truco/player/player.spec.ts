@@ -1,10 +1,8 @@
-import { Card, Suit } from '../card';
+import { Card, Suit } from '../card/card';
 import { Player } from './player';
 
-const card = (numericValue: number, suit: Suit): Card => ({
-  numericValue,
-  suit,
-});
+const card = (numericValue: number, suit: Suit): Card =>
+  new Card(numericValue, suit);
 
 describe('Player', () => {
   describe('getEnvidoPoints', () => {

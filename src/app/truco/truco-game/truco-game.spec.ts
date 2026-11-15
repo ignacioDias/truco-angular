@@ -1,12 +1,10 @@
-import { Card, Suit } from '../card';
+import { Card, Suit } from '../card/card';
 import { Deck } from '../deck';
 import { Player } from '../player/player';
 import { TrucoGame } from './truco-game';
 
-const card = (numericValue: number, suit: Suit): Card => ({
-  numericValue,
-  suit,
-});
+const card = (numericValue: number, suit: Suit): Card =>
+  new Card(numericValue, suit);
 
 const deckCards = (): Card[] => [
   // First hand: player 1 = 33 envido, player 2 = 29 envido.
