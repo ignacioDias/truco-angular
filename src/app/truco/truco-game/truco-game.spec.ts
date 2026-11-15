@@ -2,6 +2,7 @@ import { Card, Suit } from '../card/card';
 import { Deck } from '../deck';
 import { Player } from '../player/player';
 import { TrucoGame } from './truco-game';
+import { TurnTracker } from '../turn-tracker/turn-tracker';
 
 const card = (numericValue: number, suit: Suit): Card =>
   new Card(numericValue, suit);
@@ -39,16 +40,14 @@ const deckCards = (): Card[] => [
 interface TrucoGameInternals {
   player1: Player;
   player2: Player;
-  currentTurn: number;
+  turnTracker: TurnTracker;
   currentPlayedCards: (Card | null)[][];
   currentEnvidoCall: string;
   currentEnvidoPoints: number;
   currentTruco: string;
   currentPlayerWithEnvido: number;
   currentPlayerWithTrucoCall: number;
-  currentRound: number;
   playedCards: boolean[];
-  mano: number;
   player1EnvidoPoints: number;
   player2EnvidoPoints: number;
   envidoPlayed: boolean;
@@ -110,8 +109,8 @@ describe('TrucoGame', () => {
     it('makes player 1 the mano and the first player on the first hand', () => {
       const game = deal();
 
-      expect(internals(game).mano).toBe(1);
-      expect(internals(game).currentTurn % 2).toBe(1);
+      expect(internals(game).turnTracker.getMano()).toBe(1);
+      expect(internals(game).turnTracker.getCurrentPlayer()).toBe(1);
       expect(internals(game).currentPlayerWithEnvido).toBe(1);
       expect(internals(game).currentPlayerWithTrucoCall).toBe(1);
     });
@@ -121,8 +120,8 @@ describe('TrucoGame', () => {
 
       game.newHand();
 
-      expect(internals(game).mano).toBe(0);
-      expect(internals(game).currentTurn % 2).toBe(0);
+      expect(internals(game).turnTracker.getMano()).toBe(0);
+      expect(internals(game).turnTracker.getCurrentPlayer()).toBe(0);
     });
 
     it('snapshots each player envido points when the hand is dealt', () => {
@@ -163,7 +162,7 @@ describe('TrucoGame', () => {
 
       game.nextRound();
 
-      expect(internals(game).currentRound).toBe(2);
+      expect(internals(game).turnTracker.getRound()).toBe(2);
       expect(internals(game).playedCards).toEqual([false, false]);
       expect(internals(game).currentPlayedCards[0][0]).not.toBeNull();
       expect(internals(game).currentPlayedCards[0][1]).not.toBeNull();
@@ -174,14 +173,14 @@ describe('TrucoGame', () => {
       const cards = deckCards();
 
       game.nextRound();
-      expect(internals(game).currentRound).toBe(2);
+      expect(internals(game).turnTracker.getRound()).toBe(2);
 
       game.nextRound();
-      expect(internals(game).currentRound).toBe(3);
+      expect(internals(game).turnTracker.getRound()).toBe(3);
 
       game.nextRound();
 
-      expect(internals(game).currentRound).toBe(1);
+      expect(internals(game).turnTracker.getRound()).toBe(1);
       expect(internals(game).player1.hand).toEqual(cards.slice(6, 9));
       expect(internals(game).player2.hand).toEqual(cards.slice(9, 12));
       expect(internals(game).currentPlayedCards).toEqual([

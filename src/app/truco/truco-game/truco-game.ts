@@ -2,27 +2,25 @@ import { Deck } from '../deck';
 import { Player } from '../player/player';
 import { Card } from '../card/card';
 import { EnvidoCall, TrucoCall, PlayedCards } from '../truco-types';
-
+import { TurnTracker } from '../turn-tracker/turn-tracker';
 export class TrucoGame {
 
   private deck: Deck = new Deck();
   private pointsRequiredToWin: 15 | 30 = 30;
   private player1: Player = new Player(1, 'Nos');
   private player2: Player = new Player(0, 'Ellos');
-  private currentTurn: number = 0;
+  private turnTracker: TurnTracker = new TurnTracker();
   private currentPlayedCards: PlayedCards = [[null, null], [null, null], [null, null]];
   private currentEnvidoCall: EnvidoCall = 'none';
   private currentEnvidoPoints: number = 0;
-  private currentTruco: TrucoCall = 'none';
   private currentPlayerWithEnvido: number = -1;
-  private currentPlayerWithTrucoCall: number = -1;
-  private currentRound: 1 | 2 | 3 = 1;
-  private playedCards: boolean[] = [false, false];
-  private envidoPlayed: boolean = false;
-  private mano: number = -1;
   private player1EnvidoPoints: number = 0;
   private player2EnvidoPoints: number = 0;
   private envidoResolved = false;
+  private currentTruco: TrucoCall = 'none';
+  private currentPlayerWithTrucoCall: number = -1;
+  private playedCards: boolean[] = [false, false];
+  private envidoPlayed: boolean = false;
 
   constructor(player1Name: string, player2Name: string, pointsRequiredToWin: 15 | 30) {
     this.player1.name = player1Name;
@@ -35,23 +33,21 @@ export class TrucoGame {
   }
 
   public nextRound(): void {
-    if(this.currentRound >= 3) {
+    if(this.turnTracker.getRound() >= 3) {
       this.newHand();
       return
     }
     this.playedCards = [false, false];
-    this.currentRound++;
+    this.turnTracker.nextRound();
   }
 
   public newHand(): void {
     this.currentEnvidoCall = 'none';
     this.currentTruco = 'none';
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
-    this.currentTurn++;
-    this.mano = this.currentTurn % 2;
-    this.currentPlayerWithEnvido = this.currentTurn % 2;
-    this.currentPlayerWithTrucoCall = this.currentTurn % 2;
-    this.currentRound = 1;
+    this.turnTracker.startNewHand();
+    this.currentPlayerWithEnvido = this.turnTracker.getMano();
+    this.currentPlayerWithTrucoCall = this.turnTracker.getMano();
     this.envidoPlayed = false;
     this.playedCards = [false, false];
     this.currentEnvidoPoints = 0;
@@ -73,7 +69,7 @@ export class TrucoGame {
   }
 
   public playCard(playerId: number, cardIndex: number): void {
-    if (playerId !== this.currentTurn % 2) {
+    if (playerId !== this.turnTracker.getCurrentPlayer()) {
       throw new Error("It's not your turn");
     }
     if(this.playedCards[playerId]) {
@@ -84,11 +80,11 @@ export class TrucoGame {
       throw new Error("Invalid card index");
     }
     this.playedCards[playerId] = true;
-    this.currentPlayedCards[this.currentRound - 1][playerId] = player.hand[cardIndex];
+    this.currentPlayedCards[this.turnTracker.getRound() - 1][playerId] = player.hand[cardIndex];
     player.hand.splice(cardIndex, 1);
-    this.currentTurn++;
+    this.turnTracker.nextTurn();
     if (!this.envidoPlayed) {
-      this.currentPlayerWithEnvido = this.currentTurn % 2;
+      this.currentPlayerWithEnvido = this.turnTracker.getCurrentPlayer();
     }
   }
 
@@ -104,6 +100,9 @@ export class TrucoGame {
   public callTruco(trucoCall: TrucoCall, userId: number): void {
     if(this.currentPlayerWithTrucoCall !== userId && this.currentTruco !== 'none') {
       throw new Error("It's not your turn to call Truco");
+    }
+    if(this.currentPlayedCards[2][0] !== null && this.currentPlayedCards[2][0].numericValue === 4 ) {
+      throw new Error("You cannot call Truco after a 4 has been played");
     }
     if(!this.checkTrucoCallValidity(trucoCall)) {
       throw new Error("Invalid Truco call");
@@ -123,7 +122,7 @@ export class TrucoGame {
   }
 
   public callEnvido(envidoCall: EnvidoCall, userId: number): void {
-    if(this.currentRound > 1) {
+    if(this.turnTracker.getRound() > 1) {
       throw new Error("You cannot call Envido after the first round");
     }
     if (this.currentTruco !== 'none') {
@@ -176,7 +175,7 @@ export class TrucoGame {
 
   public setEnvidoPoints() {
     const winner = this.player1EnvidoPoints > this.player2EnvidoPoints ||
-      (this.player1EnvidoPoints === this.player2EnvidoPoints && this.mano === 1)
+      (this.player1EnvidoPoints === this.player2EnvidoPoints && this.turnTracker.getMano() === 1)
       ? this.player1
       : this.player2;
     const opponent = winner === this.player1 ? this.player2 : this.player1;
