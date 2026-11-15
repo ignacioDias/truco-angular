@@ -15,12 +15,12 @@ export class TrucoGame {
 
   private deck: Deck = new Deck();
   private pointsRequiredToWin: 15 | 30 = 30;
-  private player1: Player = {id: 1, name: 'Nos', hand: [], points: 0};
-  private player2: Player = {id: 0, name: 'Ellos', hand: [], points: 0};
+  private player1: Player = new Player(1, 'Nos');
+  private player2: Player = new Player(0, 'Ellos');
   private currentTurn: number = 1;
-  private gameStatus: GameStatus = 'waiting';
   private currentPlayedCards: PlayedCards = [[null, null], [null, null], [null, null]];
   private currentEnvido: EnvidoCall = 'none';
+  private currentEnvidoPoints: number = 0;
   private currentTruco: TrucoCall = 'none';
   private currentPlayerWithEnvido: number = -1;
   private currentPlayerWithTrucoCall: number = -1;
@@ -28,10 +28,6 @@ export class TrucoGame {
 
   public setPointsRequiredToWin(points: 15 | 30) {
     this.pointsRequiredToWin = points;
-  }
-
-  public setGameStatus(status: GameStatus) {
-    this.gameStatus = status;
   }
 
   public nextRound(): void {
@@ -43,32 +39,30 @@ export class TrucoGame {
     this.newHand();
   }
 
-  private newHand(): void {
+  public newHand(): void {
     this.currentEnvido = 'none';
     this.currentTruco = 'none';
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
     this.currentPlayerWithEnvido = this.currentRound % 2;
     this.currentPlayerWithTrucoCall = this.currentRound % 2;
     this.currentRound = 1;
+    this.currentEnvidoPoints = 0;
     this.setPlayersHands();
     this.currentTurn++;
   }
 
-  protected setPlayersHands() {
+  private setPlayersHands() {
     const cards = new Set<Card>();
     while (cards.size < 6) {
       const card = this.deck.getRandomCard();
       cards.add(card);
     }
     const cardsArray = Array.from(cards);
-    this.player1.hand = cardsArray.slice(0, 3);
-    this.player2.hand = cardsArray.slice(3, 6);
+    this.player1.setHand(cardsArray.slice(0, 3));
+    this.player2.setHand(cardsArray.slice(3, 6));
   }
 
   public playCard(playerId: number, cardIndex: number): void {
-    if (this.gameStatus !== 'playing') {
-      throw new Error("Game is not in playing status");
-    }
     if (playerId !== this.currentTurn % 2) {
       throw new Error("It's not your turn");
     }
@@ -81,7 +75,7 @@ export class TrucoGame {
     this.currentTurn++;
   }
 
-  public getWinner(): Player | null {
+  public getGameWinner(): Player | null {
     if (this.player1.points >= this.pointsRequiredToWin) {
       return this.player1;
     } else if (this.player2.points >= this.pointsRequiredToWin) {
@@ -126,6 +120,20 @@ export class TrucoGame {
     }
     this.currentEnvido = envidoCall;
     this.currentPlayerWithEnvido = this.currentTurn % 2;
+    this.currentEnvidoPoints += this.calculateEnvidoPoints(envidoCall);
+  }
+
+  private calculateEnvidoPoints(envidoCall: EnvidoCall): number {
+    switch (envidoCall) {
+      case 'envido':
+        return 2;
+      case 'dobleEnvido':
+        return 2;
+      case 'realEnvido':
+        return 3;
+      default:
+        return 0;
+    }
   }
 
   private checkEnvidoCallValidity(envidoCall: EnvidoCall): boolean {
@@ -138,4 +146,12 @@ export class TrucoGame {
     };
     return callOrder[envidoCall] > callOrder[this.currentEnvido];
   }
+
+  public setEnvidoPoints() {
+    if(this.player1.getEnvidoPoints() === this.player2.getEnvidoPoints()) {
+      if(this.currentTurn % 2 === 0) {
+      }
+    }
+  }
+
 }
