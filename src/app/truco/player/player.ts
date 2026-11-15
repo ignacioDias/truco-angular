@@ -1,4 +1,4 @@
-import { Card, Suit } from './card';
+import { Card, Suit } from '../card';
 
 export class Player {
   id: number = 0;

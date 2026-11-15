@@ -1,8 +1,7 @@
-import { Deck } from './deck';
-import { Player } from './player';
-import { Card } from './card';
+import { Deck } from '../deck';
+import { Player } from '../player/player';
+import { Card } from '../card';
 
-type GameStatus = 'waiting' | 'playing' | 'finished';
 type EnvidoCall = 'none' | 'envido' | 'dobleEnvido' | 'realEnvido' | 'faltaEnvido';
 type TrucoCall = 'none' | 'truco' | 'reTruco' | 'valeCuatro';
 type PlayedCards = [
@@ -19,7 +18,7 @@ export class TrucoGame {
   private player2: Player = new Player(0, 'Ellos');
   private currentTurn: number = 1;
   private currentPlayedCards: PlayedCards = [[null, null], [null, null], [null, null]];
-  private currentEnvido: EnvidoCall = 'none';
+  private currentEnvidoCall: EnvidoCall = 'none';
   private currentEnvidoPoints: number = 0;
   private currentTruco: TrucoCall = 'none';
   private currentPlayerWithEnvido: number = -1;
@@ -40,7 +39,7 @@ export class TrucoGame {
   }
 
   public newHand(): void {
-    this.currentEnvido = 'none';
+    this.currentEnvidoCall = 'none';
     this.currentTruco = 'none';
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
     this.currentPlayerWithEnvido = this.currentRound % 2;
@@ -112,13 +111,13 @@ export class TrucoGame {
     if(this.currentRound > 1) {
       throw new Error("Envido can only be called in the first round");
     }
-    if(envidoCall === 'dobleEnvido' && this.currentEnvido !== 'envido') {
+    if(envidoCall === 'dobleEnvido' && this.currentEnvidoCall !== 'envido') {
       throw new Error("Invalid Envido call");
     }
     if(!this.checkEnvidoCallValidity(envidoCall)) {
       throw new Error("Invalid Envido call");
     }
-    this.currentEnvido = envidoCall;
+    this.currentEnvidoCall = envidoCall;
     this.currentPlayerWithEnvido = this.currentTurn % 2;
     this.currentEnvidoPoints += this.calculateEnvidoPoints(envidoCall);
   }
@@ -144,13 +143,38 @@ export class TrucoGame {
       realEnvido: 3,
       faltaEnvido: 4,
     };
-    return callOrder[envidoCall] > callOrder[this.currentEnvido];
+    return callOrder[envidoCall] > callOrder[this.currentEnvidoCall];
   }
 
-  public setEnvidoPoints() {
-    if(this.player1.getEnvidoPoints() === this.player2.getEnvidoPoints()) {
+  public getEnvidoPoints() {
+    const player1Points = this.player1.getEnvidoPoints();
+    const player2Points = this.player2.getEnvidoPoints();
+    if(player1Points > player2Points) {
+      if(this.currentEnvidoCall == "faltaEnvido") {
+        this.currentEnvidoPoints += this.pointsRequiredToWin - this.player2.points;
+      }
+      this.player1.points += this.currentEnvidoPoints;
+      return;
+    }
+    if(player2Points > player1Points) {
+      if(this.currentEnvidoCall == "faltaEnvido") {
+        this.currentEnvidoPoints += this.pointsRequiredToWin - this.player1.points;
+      }
+      this.player2.points += this.currentEnvidoPoints;
+      return;
+    }
+    if(player1Points === player2Points) {
       if(this.currentTurn % 2 === 0) {
       }
+    }
+  }
+  public addPointsToPlayer(playerId: number, points: number): void {
+    if (playerId === 0) {
+      this.player2.points += points;
+    } else if (playerId === 1) {
+      this.player1.points += points;
+    } else {
+      throw new Error("Invalid player ID");
     }
   }
 

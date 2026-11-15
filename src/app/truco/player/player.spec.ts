@@ -1,4 +1,4 @@
-import { Card, Suit } from './card';
+import { Card, Suit } from '../card';
 import { Player } from './player';
 
 const card = (numericValue: number, suit: Suit): Card => ({
