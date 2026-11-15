@@ -3,6 +3,7 @@ import { Deck } from '../deck';
 import { Player } from '../player/player';
 import { TrucoGame } from './truco-game';
 import { TurnTracker } from '../turn-tracker/turn-tracker';
+import { TrucoCallState } from '../truco-call-state/truco-call-state';
 
 const card = (numericValue: number, suit: Suit): Card =>
   new Card(numericValue, suit);
@@ -41,12 +42,11 @@ interface TrucoGameInternals {
   player1: Player;
   player2: Player;
   turnTracker: TurnTracker;
+  trucoCallState: TrucoCallState;
   currentPlayedCards: (Card | null)[][];
   currentEnvidoCall: string;
   currentEnvidoPoints: number;
-  currentTruco: string;
   currentPlayerWithEnvido: number;
-  currentPlayerWithTrucoCall: number;
   playedCards: boolean[];
   player1EnvidoPoints: number;
   player2EnvidoPoints: number;
@@ -112,7 +112,7 @@ describe('TrucoGame', () => {
       expect(internals(game).turnTracker.getMano()).toBe(1);
       expect(internals(game).turnTracker.getCurrentPlayer()).toBe(1);
       expect(internals(game).currentPlayerWithEnvido).toBe(1);
-      expect(internals(game).currentPlayerWithTrucoCall).toBe(1);
+      expect(internals(game).trucoCallState.getPlayerToCall()).toBe(1);
     });
 
     it('alternates the mano between hands', () => {
@@ -140,7 +140,7 @@ describe('TrucoGame', () => {
       game.newHand();
 
       expect(internals(game).currentEnvidoCall).toBe('none');
-      expect(internals(game).currentTruco).toBe('none');
+      expect(internals(game).trucoCallState.getCall()).toBe('none');
       expect(internals(game).currentEnvidoPoints).toBe(0);
       expect(internals(game).envidoPlayed).toBe(false);
       expect(internals(game).envidoResolved).toBe(false);
@@ -298,8 +298,8 @@ describe('TrucoGame', () => {
 
       game.callTruco('truco', 1);
 
-      expect(internals(game).currentTruco).toBe('truco');
-      expect(internals(game).currentPlayerWithTrucoCall).toBe(0);
+      expect(internals(game).trucoCallState.getCall()).toBe('truco');
+      expect(internals(game).trucoCallState.getPlayerToCall()).toBe(0);
     });
 
     it('allows player 2 to call the first truco', () => {
@@ -307,8 +307,8 @@ describe('TrucoGame', () => {
 
       game.callTruco('truco', 0);
 
-      expect(internals(game).currentTruco).toBe('truco');
-      expect(internals(game).currentPlayerWithTrucoCall).toBe(1);
+      expect(internals(game).trucoCallState.getCall()).toBe('truco');
+      expect(internals(game).trucoCallState.getPlayerToCall()).toBe(1);
     });
 
     it('only allows the opponent to answer the first truco', () => {
@@ -328,8 +328,8 @@ describe('TrucoGame', () => {
       game.callTruco('reTruco', 1);
       game.callTruco('valeCuatro', 0);
 
-      expect(internals(game).currentTruco).toBe('valeCuatro');
-      expect(internals(game).currentPlayerWithTrucoCall).toBe(1);
+      expect(internals(game).trucoCallState.getCall()).toBe('valeCuatro');
+      expect(internals(game).trucoCallState.getPlayerToCall()).toBe(1);
     });
 
     it('rejects reTruco and valeCuatro before truco', () => {

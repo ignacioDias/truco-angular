@@ -1,8 +1,15 @@
 import { Deck } from '../deck';
 import { Player } from '../player/player';
 import { Card } from '../card/card';
-import { EnvidoCall, TrucoCall, PlayedCards } from '../truco-types';
+import {
+  EnvidoCall,
+  PlayedCards,
+  PlayerId,
+  TrucoCall,
+  opponentOf,
+} from '../truco-types';
 import { TurnTracker } from '../turn-tracker/turn-tracker';
+import { TrucoCallState } from '../truco-call-state/truco-call-state';
 export class TrucoGame {
 
   private deck: Deck = new Deck();
@@ -17,10 +24,9 @@ export class TrucoGame {
   private player1EnvidoPoints: number = 0;
   private player2EnvidoPoints: number = 0;
   private envidoResolved = false;
-  private currentTruco: TrucoCall = 'none';
-  private currentPlayerWithTrucoCall: number = -1;
   private playedCards: boolean[] = [false, false];
   private envidoPlayed: boolean = false;
+  private trucoCallState: TrucoCallState = new TrucoCallState();
 
   constructor(player1Name: string, player2Name: string, pointsRequiredToWin: 15 | 30) {
     this.player1.name = player1Name;
@@ -43,11 +49,10 @@ export class TrucoGame {
 
   public newHand(): void {
     this.currentEnvidoCall = 'none';
-    this.currentTruco = 'none';
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
     this.turnTracker.startNewHand();
     this.currentPlayerWithEnvido = this.turnTracker.getMano();
-    this.currentPlayerWithTrucoCall = this.turnTracker.getMano();
+    this.trucoCallState.startNewHand(this.turnTracker.getMano());
     this.envidoPlayed = false;
     this.playedCards = [false, false];
     this.currentEnvidoPoints = 0;
@@ -97,35 +102,15 @@ export class TrucoGame {
     return null;
   }
 
-  public callTruco(trucoCall: TrucoCall, userId: number): void {
-    if(this.currentPlayerWithTrucoCall !== userId && this.currentTruco !== 'none') {
-      throw new Error("It's not your turn to call Truco");
-    }
-    if(this.currentPlayedCards[2][0] !== null && this.currentPlayedCards[2][0].numericValue === 4 ) {
-      throw new Error("You cannot call Truco after a 4 has been played");
-    }
-    if(!this.checkTrucoCallValidity(trucoCall)) {
-      throw new Error("Invalid Truco call");
-    }
-    this.currentTruco = trucoCall;
-    this.currentPlayerWithTrucoCall = (userId + 1) % 2;
+  public callTruco(trucoCall: TrucoCall, userId: PlayerId): void {
+    this.trucoCallState.callTruco(trucoCall, userId, this.currentPlayedCards);
   }
 
-  private checkTrucoCallValidity(trucoCall: TrucoCall): boolean {
-    const callOrder: Record<TrucoCall, number> = {
-      none: 0,
-      truco: 1,
-      reTruco: 2,
-      valeCuatro: 3,
-    };
-    return callOrder[trucoCall] === callOrder[this.currentTruco] + 1;
-  }
-
-  public callEnvido(envidoCall: EnvidoCall, userId: number): void {
+  public callEnvido(envidoCall: EnvidoCall, userId: PlayerId): void {
     if(this.turnTracker.getRound() > 1) {
       throw new Error("You cannot call Envido after the first round");
     }
-    if (this.currentTruco !== 'none') {
+    if (this.trucoCallState.getCall() !== 'none') {
       throw new Error('Envido cannot be called after Truco');
     }
     if(this.envidoResolved) {
@@ -144,7 +129,7 @@ export class TrucoGame {
       throw new Error("Invalid Envido call");
     }
     this.currentEnvidoCall = envidoCall;
-    this.currentPlayerWithEnvido = this.currentPlayerWithEnvido === 0 ? 1 : 0;
+    this.currentPlayerWithEnvido = opponentOf(userId);
     this.currentEnvidoPoints += this.calculateEnvidoPoints(envidoCall);
     this.envidoPlayed = true;
   }
