@@ -1,7 +1,7 @@
 import { Card, Suit } from '../card';
 
 export class Player {
-  id: number = 0;
+  private id: number = 0;
   name: string = '';
   hand: Card[] = [];
   points: number = 0;

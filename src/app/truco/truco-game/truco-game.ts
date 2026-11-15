@@ -24,6 +24,13 @@ export class TrucoGame {
   private currentPlayerWithEnvido: number = -1;
   private currentPlayerWithTrucoCall: number = -1;
   private currentRound: 1 | 2 | 3 = 1;
+  private isEnvidoValid: boolean[] = [true, true];
+
+  constructor(player1Name: string, player2Name: string, pointsRequiredToWin: 15 | 30) {
+    this.player1.name = player1Name;
+    this.player2.name = player2Name;
+    this.pointsRequiredToWin = pointsRequiredToWin;
+  }
 
   public setPointsRequiredToWin(points: 15 | 30) {
     this.pointsRequiredToWin = points;
@@ -31,23 +38,22 @@ export class TrucoGame {
 
   public nextRound(): void {
     if(this.currentRound >= 3) {
-      this.currentRound = 1;
-    } else {
-      this.currentRound++;
+      this.isEnvidoValid = [true, true];
+      this.newHand();
+      return
     }
-    this.newHand();
+    this.currentRound++;
   }
 
   public newHand(): void {
     this.currentEnvidoCall = 'none';
     this.currentTruco = 'none';
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
-    this.currentPlayerWithEnvido = this.currentRound % 2;
-    this.currentPlayerWithTrucoCall = this.currentRound % 2;
+    this.currentPlayerWithEnvido = this.currentTurn % 2;
+    this.currentPlayerWithTrucoCall = this.currentTurn % 2;
     this.currentRound = 1;
     this.currentEnvidoPoints = 0;
     this.setPlayersHands();
-    this.currentTurn++;
   }
 
   private setPlayersHands() {
@@ -69,6 +75,7 @@ export class TrucoGame {
     if (cardIndex < 0 || cardIndex >= player.hand.length) {
       throw new Error("Invalid card index");
     }
+    this.isEnvidoValid[playerId] = false;
     this.currentPlayedCards[this.currentRound - 1][playerId] = player.hand[cardIndex];
     player.hand.splice(cardIndex, 1);
     this.currentTurn++;
@@ -108,8 +115,8 @@ export class TrucoGame {
     if(this.currentPlayerWithEnvido !== userId) {
       throw new Error("It's not your turn to call Envido");
     }
-    if(this.currentRound > 1) {
-      throw new Error("Envido can only be called in the first round");
+    if(!this.isEnvidoValid[userId]) {
+      throw new Error("You cannot call Envido after playing a card");
     }
     if(envidoCall === 'dobleEnvido' && this.currentEnvidoCall !== 'envido') {
       throw new Error("Invalid Envido call");
@@ -146,28 +153,25 @@ export class TrucoGame {
     return callOrder[envidoCall] > callOrder[this.currentEnvidoCall];
   }
 
-  public getEnvidoPoints() {
+  public setEnvidoPoints() {
     const player1Points = this.player1.getEnvidoPoints();
     const player2Points = this.player2.getEnvidoPoints();
-    if(player1Points > player2Points) {
-      if(this.currentEnvidoCall == "faltaEnvido") {
-        this.currentEnvidoPoints += this.pointsRequiredToWin - this.player2.points;
-      }
-      this.player1.points += this.currentEnvidoPoints;
-      return;
-    }
-    if(player2Points > player1Points) {
-      if(this.currentEnvidoCall == "faltaEnvido") {
-        this.currentEnvidoPoints += this.pointsRequiredToWin - this.player1.points;
-      }
-      this.player2.points += this.currentEnvidoPoints;
-      return;
-    }
-    if(player1Points === player2Points) {
-      if(this.currentTurn % 2 === 0) {
-      }
-    }
+    const winner = player1Points > player2Points ||
+      (player1Points === player2Points && this.currentTurn % 2 !== 0)
+      ? this.player1
+      : this.player2;
+    const opponent = winner === this.player1 ? this.player2 : this.player1;
+    this.addEnvidoPoints(winner, opponent);
   }
+
+  private addEnvidoPoints(player: Player, opponent: Player): void {
+    if (this.currentEnvidoCall === 'faltaEnvido') {
+      this.currentEnvidoPoints += this.pointsRequiredToWin - opponent.points;
+    }
+    player.points += this.currentEnvidoPoints;
+    this.currentEnvidoPoints = 0;
+  }
+
   public addPointsToPlayer(playerId: number, points: number): void {
     if (playerId === 0) {
       this.player2.points += points;
