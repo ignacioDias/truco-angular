@@ -1,14 +1,7 @@
 import { Deck } from '../deck';
 import { Player } from '../player/player';
 import { Card } from '../card';
-
-type EnvidoCall = 'none' | 'envido' | 'dobleEnvido' | 'realEnvido' | 'faltaEnvido';
-type TrucoCall = 'none' | 'truco' | 'reTruco' | 'valeCuatro';
-type PlayedCards = [
-  [Card | null, Card | null],
-  [Card | null, Card | null],
-  [Card | null, Card | null],
-];
+import { EnvidoCall, TrucoCall, PlayedCards } from '../truco-types';
 
 export class TrucoGame {
 
@@ -94,6 +87,9 @@ export class TrucoGame {
     this.currentPlayedCards[this.currentRound - 1][playerId] = player.hand[cardIndex];
     player.hand.splice(cardIndex, 1);
     this.currentTurn++;
+    if (!this.envidoPlayed) {
+      this.currentPlayerWithEnvido = this.currentTurn % 2;
+    }
   }
 
   public getGameWinner(): Player | null {
@@ -113,7 +109,7 @@ export class TrucoGame {
       throw new Error("Invalid Truco call");
     }
     this.currentTruco = trucoCall;
-    this.currentPlayerWithTrucoCall = this.currentPlayerWithTrucoCall === 0 ? 1 : 0;
+    this.currentPlayerWithTrucoCall = (userId + 1) % 2;
   }
 
   private checkTrucoCallValidity(trucoCall: TrucoCall): boolean {
@@ -123,12 +119,15 @@ export class TrucoGame {
       reTruco: 2,
       valeCuatro: 3,
     };
-    return callOrder[trucoCall] > callOrder[this.currentTruco];
+    return callOrder[trucoCall] === callOrder[this.currentTruco] + 1;
   }
 
   public callEnvido(envidoCall: EnvidoCall, userId: number): void {
     if(this.currentRound > 1) {
       throw new Error("You cannot call Envido after the first round");
+    }
+    if (this.currentTruco !== 'none') {
+      throw new Error('Envido cannot be called after Truco');
     }
     if(this.envidoResolved) {
       throw new Error("Envido has already been resolved");
