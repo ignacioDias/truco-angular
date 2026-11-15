@@ -24,8 +24,12 @@ export class TrucoGame {
   private currentPlayerWithEnvido: number = -1;
   private currentPlayerWithTrucoCall: number = -1;
   private currentRound: 1 | 2 | 3 = 1;
-  private isEnvidoValid: boolean[] = [true, true];
   private playedCards: boolean[] = [false, false];
+  private envidoPlayed: boolean = false;
+  private mano: number = -1;
+  private player1EnvidoPoints: number = 0;
+  private player2EnvidoPoints: number = 0;
+  private envidoResolved = false;
 
   constructor(player1Name: string, player2Name: string, pointsRequiredToWin: 15 | 30) {
     this.player1.name = player1Name;
@@ -39,10 +43,10 @@ export class TrucoGame {
 
   public nextRound(): void {
     if(this.currentRound >= 3) {
-
       this.newHand();
       return
     }
+    this.playedCards = [false, false];
     this.currentRound++;
   }
 
@@ -51,13 +55,17 @@ export class TrucoGame {
     this.currentTruco = 'none';
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
     this.currentTurn++;
-    this.isEnvidoValid = [true, true];
-    this.playedCards = [false, false];
+    this.mano = this.currentTurn % 2;
     this.currentPlayerWithEnvido = this.currentTurn % 2;
     this.currentPlayerWithTrucoCall = this.currentTurn % 2;
     this.currentRound = 1;
+    this.envidoPlayed = false;
+    this.playedCards = [false, false];
     this.currentEnvidoPoints = 0;
     this.setPlayersHands();
+    this.player1EnvidoPoints = this.player1.getEnvidoPoints();
+    this.player2EnvidoPoints = this.player2.getEnvidoPoints();
+    this.envidoResolved = false;
   }
 
   private setPlayersHands() {
@@ -83,7 +91,6 @@ export class TrucoGame {
       throw new Error("Invalid card index");
     }
     this.playedCards[playerId] = true;
-    this.isEnvidoValid[playerId] = false;
     this.currentPlayedCards[this.currentRound - 1][playerId] = player.hand[cardIndex];
     player.hand.splice(cardIndex, 1);
     this.currentTurn++;
@@ -99,7 +106,7 @@ export class TrucoGame {
   }
 
   public callTruco(trucoCall: TrucoCall, userId: number): void {
-    if(this.currentPlayerWithTrucoCall !== userId) {
+    if(this.currentPlayerWithTrucoCall !== userId && this.currentTruco !== 'none') {
       throw new Error("It's not your turn to call Truco");
     }
     if(!this.checkTrucoCallValidity(trucoCall)) {
@@ -120,10 +127,16 @@ export class TrucoGame {
   }
 
   public callEnvido(envidoCall: EnvidoCall, userId: number): void {
+    if(this.currentRound > 1) {
+      throw new Error("You cannot call Envido after the first round");
+    }
+    if(this.envidoResolved) {
+      throw new Error("Envido has already been resolved");
+    }
     if(this.currentPlayerWithEnvido !== userId) {
       throw new Error("It's not your turn to call Envido");
     }
-    if(!this.isEnvidoValid[userId]) {
+    if(!this.envidoPlayed && this.playedCards[userId]) {
       throw new Error("You cannot call Envido after playing a card");
     }
     if(envidoCall === 'dobleEnvido' && this.currentEnvidoCall !== 'envido') {
@@ -135,6 +148,7 @@ export class TrucoGame {
     this.currentEnvidoCall = envidoCall;
     this.currentPlayerWithEnvido = this.currentPlayerWithEnvido === 0 ? 1 : 0;
     this.currentEnvidoPoints += this.calculateEnvidoPoints(envidoCall);
+    this.envidoPlayed = true;
   }
 
   private calculateEnvidoPoints(envidoCall: EnvidoCall): number {
@@ -162,15 +176,13 @@ export class TrucoGame {
   }
 
   public setEnvidoPoints() {
-    const player1Points = this.player1.getEnvidoPoints();
-    const player2Points = this.player2.getEnvidoPoints();
-    const winner = player1Points > player2Points ||
-      (player1Points === player2Points && this.currentTurn % 2 !== 0)
+    const winner = this.player1EnvidoPoints > this.player2EnvidoPoints ||
+      (this.player1EnvidoPoints === this.player2EnvidoPoints && this.mano === 1)
       ? this.player1
       : this.player2;
     const opponent = winner === this.player1 ? this.player2 : this.player1;
     this.addEnvidoPoints(winner, opponent);
-    this.currentEnvidoCall = 'none';
+    this.envidoResolved = true;
   }
 
   private addEnvidoPoints(player: Player, opponent: Player): void {
