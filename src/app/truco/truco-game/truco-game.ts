@@ -1,6 +1,6 @@
 import { Deck } from '../deck';
 import { Player } from '../player/player';
-import { Card } from '../card';
+import { Card } from '../card/card';
 import { EnvidoCall, TrucoCall, PlayedCards } from '../truco-types';
 
 export class TrucoGame {

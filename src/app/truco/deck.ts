@@ -1,4 +1,4 @@
-import { Card, Suit } from "./card";
+import { Card, Suit } from "./card/card";
 
 export class Deck {
   private cards: Card[] = this.generateDeck();
@@ -8,7 +8,7 @@ export class Deck {
     const values = [1, 2, 3, 4, 5, 6, 7, 11, 12];
     for (const suit of Object.values(Suit) as Suit[]) {
       for (const value of values) {
-        cards.push({ numericValue: value, suit: suit });
+        cards.push(new Card(value, suit));
       }
     }
     return cards;

@@ -1,4 +1,4 @@
-import { Card, Suit } from '../card';
+import { Card, Suit } from '../card/card';
 
 export class Player {
   private id: number = 0;
