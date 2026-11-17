@@ -1,36 +1,58 @@
-import { EnvidoCall, PlayerId } from '../truco-types';
+import { EnvidoCall, PlayerId, opponentOf } from '../truco-types';
 import { Player } from '../player/player';
-
 export class EnvidoCallState {
-  public callEnvido(envidoCall: EnvidoCall, userId: PlayerId): void {
-      if(this.turnTracker.getRound() > 1) {
-        throw new Error("You cannot call Envido after the first round");
-      }
-      if (this.trucoCallState.getCall() !== 'none') {
-        throw new Error('Envido cannot be called after Truco');
-      }
+
+  private currentCall: EnvidoCall = 'none';
+  private currentEnvidoPoints: number = 0;
+  private currentPlayerWithEnvido: number = -1;
+  private player1EnvidoPoints: number = 0;
+  private player2EnvidoPoints: number = 0;
+  private envidoResolved = false;
+  private envidoPlayed: boolean = false;
+
+  public startNewHand(mano: number, player1EnvidoPoints: number, player2EnvidoPoints: number): void {
+    this.currentCall = 'none';
+    this.currentPlayerWithEnvido = mano;
+    this.envidoPlayed = false;
+    this.currentEnvidoPoints = 0;
+    this.player1EnvidoPoints = player1EnvidoPoints;
+    this.player2EnvidoPoints = player2EnvidoPoints;
+    this.envidoResolved = false;
+
+  }
+
+  public updateCurrentPlayerWithEnvido(currentPlayer: number): void {
+    if (!this.envidoPlayed) {
+      this.currentPlayerWithEnvido = currentPlayer;
+    }
+  }
+  public getEnvidoPlayed(): boolean {
+    return this.envidoPlayed;
+  }
+
+  public callEnvido(envidoCall: EnvidoCall, userId: PlayerId, playedCards: boolean[]): void {
       if(this.envidoResolved) {
         throw new Error("Envido has already been resolved");
       }
       if(this.currentPlayerWithEnvido !== userId) {
         throw new Error("It's not your turn to call Envido");
       }
-      if(!this.envidoPlayed && this.playedCards[userId]) {
+      if(!this.envidoPlayed && playedCards[userId]) {
         throw new Error("You cannot call Envido after playing a card");
       }
-      if(envidoCall === 'dobleEnvido' && this.currentEnvidoCall !== 'envido') {
+      if(envidoCall === 'dobleEnvido' && this.currentCall !== 'envido') {
         throw new Error("Invalid Envido call");
       }
       if(!this.checkEnvidoCallValidity(envidoCall)) {
         throw new Error("Invalid Envido call");
       }
-      this.currentEnvidoCall = envidoCall;
+      this.currentCall = envidoCall;
       this.currentPlayerWithEnvido = opponentOf(userId);
-      this.currentEnvidoPoints += this.calculateEnvidoPoints(envidoCall);
+      this.currentEnvidoPoints += this.convertEnvidoCallToPoints(envidoCall);
       this.envidoPlayed = true;
     }
 
-    private calculateEnvidoPoints(envidoCall: EnvidoCall): number {
+    private convertEnvidoCallToPoints(envidoCall: EnvidoCall): number {
       switch (envidoCall) {
         case 'envido':
           return 2;
@@ -51,25 +73,26 @@ export class EnvidoCallState {
         realEnvido: 3,
         faltaEnvido: 4,
       };
-      return callOrder[envidoCall] > callOrder[this.currentEnvidoCall];
+      return callOrder[envidoCall] > callOrder[this.currentCall];
     }
 
-    public setEnvidoPoints() {
+    public awardEnvidoPoints(currentMano: number, pointsRequiredToWin: 15 | 30, player1: Player, player2: Player): [number, number] {
       const winner = this.player1EnvidoPoints > this.player2EnvidoPoints ||
-        (this.player1EnvidoPoints === this.player2EnvidoPoints && this.turnTracker.getMano() === 1)
-        ? this.player1
-        : this.player2;
-      const opponent = winner === this.player1 ? this.player2 : this.player1;
-      this.addEnvidoPoints(winner, opponent);
+        (this.player1EnvidoPoints === this.player2EnvidoPoints && currentMano === 1) ? player1 : player2;
+      const opponent = winner === player1 ? player2 : player1;
+      const pointsToAdd = this.calculateEnvidoPoints(opponent, pointsRequiredToWin);
+      const output: [number, number] = [winner.getId(), pointsToAdd];
       this.envidoResolved = true;
+      return output;
     }
 
-    private addEnvidoPoints(player: Player, opponent: Player): void {
-      if (this.currentEnvidoCall === 'faltaEnvido') {
-        this.currentEnvidoPoints += this.pointsRequiredToWin - opponent.points;
+    private calculateEnvidoPoints(opponent: Player, pointsRequiredToWin: 15 | 30): number {
+      if (this.currentCall === 'faltaEnvido') {
+        this.currentEnvidoPoints += pointsRequiredToWin - opponent.points;
       }
-      player.points += this.currentEnvidoPoints;
+      const pointsToAdd = this.currentEnvidoPoints;
       this.currentEnvidoPoints = 0;
+      return pointsToAdd;
     }
 
 }

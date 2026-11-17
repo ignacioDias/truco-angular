@@ -11,6 +11,10 @@ export class Player {
     this.name = name;
   }
 
+  public getId(): number {
+    return this.id;
+  }
+
   public setHand(cards: Card[]): void {
     this.hand = cards;
   }
