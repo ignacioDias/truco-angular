@@ -39,11 +39,10 @@ export class TrucoGame {
   public newHand(): void {
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
     this.turnTracker.startNewHand();
-    this.envidoCallState.startNewHand(this.turnTracker.getMano(), this.player1.getEnvidoPoints(), this.player2.getEnvidoPoints());
-    this.trucoCallState.startNewHand(this.turnTracker.getMano());
     this.playedCards = [false, false];
     this.setPlayersHands();
-
+    this.envidoCallState.startNewHand(this.turnTracker.getMano(), this.player1.getEnvidoPoints(), this.player2.getEnvidoPoints());
+    this.trucoCallState.startNewHand(this.turnTracker.getMano());
   }
 
   private setPlayersHands() {

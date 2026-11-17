@@ -4,6 +4,8 @@ import { Player } from '../player/player';
 import { TrucoGame } from './truco-game';
 import { TurnTracker } from '../turn-tracker/turn-tracker';
 import { TrucoCallState } from '../truco-call-state/truco-call-state';
+import { EnvidoCallState } from '../envido-call-state/envido-call-state';
+import { EnvidoCall } from '../truco-types';
 
 const card = (numericValue: number, suit: Suit): Card =>
   new Card(numericValue, suit);
@@ -43,11 +45,15 @@ interface TrucoGameInternals {
   player2: Player;
   turnTracker: TurnTracker;
   trucoCallState: TrucoCallState;
+  envidoCallState: EnvidoCallState;
   currentPlayedCards: (Card | null)[][];
-  currentEnvidoCall: string;
+  playedCards: boolean[];
+}
+
+interface EnvidoCallStateInternals {
+  currentCall: EnvidoCall;
   currentEnvidoPoints: number;
   currentPlayerWithEnvido: number;
-  playedCards: boolean[];
   player1EnvidoPoints: number;
   player2EnvidoPoints: number;
   envidoPlayed: boolean;
@@ -56,6 +62,9 @@ interface TrucoGameInternals {
 
 const internals = (game: TrucoGame): TrucoGameInternals =>
   game as unknown as TrucoGameInternals;
+
+const envidoInternals = (game: TrucoGame): EnvidoCallStateInternals =>
+  internals(game).envidoCallState as unknown as EnvidoCallStateInternals;
 
 function mockDeck(cards: Card[] = deckCards()): void {
   let index = 0;
@@ -111,7 +120,7 @@ describe('TrucoGame', () => {
 
       expect(internals(game).turnTracker.getMano()).toBe(1);
       expect(internals(game).turnTracker.getCurrentPlayer()).toBe(1);
-      expect(internals(game).currentPlayerWithEnvido).toBe(1);
+      expect(envidoInternals(game).currentPlayerWithEnvido).toBe(1);
       expect(internals(game).trucoCallState.getPlayerToCall()).toBe(1);
     });
 
@@ -127,8 +136,8 @@ describe('TrucoGame', () => {
     it('snapshots each player envido points when the hand is dealt', () => {
       const game = deal();
 
-      expect(internals(game).player1EnvidoPoints).toBe(33);
-      expect(internals(game).player2EnvidoPoints).toBe(29);
+      expect(envidoInternals(game).player1EnvidoPoints).toBe(33);
+      expect(envidoInternals(game).player2EnvidoPoints).toBe(29);
     });
 
     it('resets the table state', () => {
@@ -139,11 +148,11 @@ describe('TrucoGame', () => {
 
       game.newHand();
 
-      expect(internals(game).currentEnvidoCall).toBe('none');
+      expect(envidoInternals(game).currentCall).toBe('none');
       expect(internals(game).trucoCallState.getCall()).toBe('none');
-      expect(internals(game).currentEnvidoPoints).toBe(0);
-      expect(internals(game).envidoPlayed).toBe(false);
-      expect(internals(game).envidoResolved).toBe(false);
+      expect(envidoInternals(game).currentEnvidoPoints).toBe(0);
+      expect(envidoInternals(game).envidoPlayed).toBe(false);
+      expect(envidoInternals(game).envidoResolved).toBe(false);
       expect(internals(game).currentPlayedCards).toEqual([
         [null, null],
         [null, null],
@@ -250,7 +259,16 @@ describe('TrucoGame', () => {
 
       game.playCard(1, 0);
 
-      expect(internals(game).currentPlayerWithEnvido).toBe(0);
+      expect(envidoInternals(game).currentPlayerWithEnvido).toBe(0);
+    });
+
+    it('stops moving the envido call once envido has been played', () => {
+      const game = deal();
+      game.callEnvido('envido', 1);
+
+      playRound(game);
+
+      expect(envidoInternals(game).currentPlayerWithEnvido).toBe(0);
     });
   });
 
@@ -366,9 +384,9 @@ describe('TrucoGame', () => {
 
       game.callEnvido('envido', 1);
 
-      expect(internals(game).currentEnvidoCall).toBe('envido');
-      expect(internals(game).currentEnvidoPoints).toBe(2);
-      expect(internals(game).currentPlayerWithEnvido).toBe(0);
+      expect(envidoInternals(game).currentCall).toBe('envido');
+      expect(envidoInternals(game).currentEnvidoPoints).toBe(2);
+      expect(envidoInternals(game).currentPlayerWithEnvido).toBe(0);
     });
 
     it('rejects envido from the non-mano before the first card', () => {
@@ -385,8 +403,8 @@ describe('TrucoGame', () => {
 
       game.callEnvido('envido', 0);
 
-      expect(internals(game).currentEnvidoCall).toBe('envido');
-      expect(internals(game).currentEnvidoPoints).toBe(2);
+      expect(envidoInternals(game).currentCall).toBe('envido');
+      expect(envidoInternals(game).currentEnvidoPoints).toBe(2);
     });
 
     it('allows a player who already played to answer envido', () => {
@@ -396,41 +414,8 @@ describe('TrucoGame', () => {
 
       game.callEnvido('realEnvido', 1);
 
-      expect(internals(game).currentEnvidoCall).toBe('realEnvido');
-      expect(internals(game).currentEnvidoPoints).toBe(5);
-    });
-
-    it('only allows doble envido after envido', () => {
-      const game = deal();
-
-      expect(() => game.callEnvido('dobleEnvido', 1)).toThrow(
-        'Invalid Envido call',
-      );
-    });
-
-    it('accepts envido followed by doble envido', () => {
-      const game = deal();
-
-      game.callEnvido('envido', 1);
-      game.callEnvido('dobleEnvido', 0);
-
-      expect(internals(game).currentEnvidoCall).toBe('dobleEnvido');
-      expect(internals(game).currentEnvidoPoints).toBe(4);
-    });
-
-    it('accepts real envido as the first envido call', () => {
-      const game = deal();
-
-      game.callEnvido('realEnvido', 1);
-
-      expect(internals(game).currentEnvidoPoints).toBe(3);
-    });
-
-    it('rejects repeating the same call', () => {
-      const game = deal();
-      game.callEnvido('envido', 1);
-
-      expect(() => game.callEnvido('envido', 0)).toThrow('Invalid Envido call');
+      expect(envidoInternals(game).currentCall).toBe('realEnvido');
+      expect(envidoInternals(game).currentEnvidoPoints).toBe(5);
     });
 
     it('rejects envido after the first round', () => {
@@ -440,6 +425,15 @@ describe('TrucoGame', () => {
 
       expect(() => game.callEnvido('envido', 1)).toThrow(
         'You cannot call Envido after the first round',
+      );
+    });
+
+    it('rejects envido after truco has been called', () => {
+      const game = deal();
+      game.callTruco('truco', 1);
+
+      expect(() => game.callEnvido('envido', 1)).toThrow(
+        'Envido cannot be called after Truco',
       );
     });
 
@@ -455,7 +449,7 @@ describe('TrucoGame', () => {
     it('rejects envido after it was resolved', () => {
       const game = deal();
       game.callEnvido('envido', 1);
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
       expect(() => game.callEnvido('envido', 0)).toThrow(
         'Envido has already been resolved',
@@ -463,25 +457,25 @@ describe('TrucoGame', () => {
     });
   });
 
-  describe('setEnvidoPoints', () => {
+  describe('setPointsFromEnvido', () => {
     it('awards the envido points to player 1 when they have more', () => {
       const game = deal();
       game.callEnvido('envido', 1);
 
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
       expect(internals(game).player1.points).toBe(2);
       expect(internals(game).player2.points).toBe(0);
-      expect(internals(game).envidoResolved).toBe(true);
+      expect(envidoInternals(game).envidoResolved).toBe(true);
     });
 
     it('awards the envido points to player 2 when they have more', () => {
       const game = deal();
-      internals(game).player1EnvidoPoints = 20;
-      internals(game).player2EnvidoPoints = 30;
+      envidoInternals(game).player1EnvidoPoints = 20;
+      envidoInternals(game).player2EnvidoPoints = 30;
       game.callEnvido('envido', 1);
 
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
       expect(internals(game).player1.points).toBe(0);
       expect(internals(game).player2.points).toBe(2);
@@ -489,11 +483,11 @@ describe('TrucoGame', () => {
 
     it('awards a tie to the mano', () => {
       const game = deal();
-      internals(game).player1EnvidoPoints = 30;
-      internals(game).player2EnvidoPoints = 30;
+      envidoInternals(game).player1EnvidoPoints = 30;
+      envidoInternals(game).player2EnvidoPoints = 30;
       game.callEnvido('envido', 1);
 
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
       expect(internals(game).player1.points).toBe(2);
       expect(internals(game).player2.points).toBe(0);
@@ -502,11 +496,11 @@ describe('TrucoGame', () => {
     it('awards a tie to player 2 when they are the mano', () => {
       const game = deal();
       game.newHand();
-      internals(game).player1EnvidoPoints = 30;
-      internals(game).player2EnvidoPoints = 30;
+      envidoInternals(game).player1EnvidoPoints = 30;
+      envidoInternals(game).player2EnvidoPoints = 30;
       game.callEnvido('envido', 0);
 
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
       expect(internals(game).player1.points).toBe(0);
       expect(internals(game).player2.points).toBe(2);
@@ -530,7 +524,7 @@ describe('TrucoGame', () => {
       game.playCard(1, 0);
       game.callEnvido('envido', 0);
 
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
       expect(internals(game).player1.points).toBe(2);
       expect(internals(game).player2.points).toBe(0);
@@ -541,7 +535,7 @@ describe('TrucoGame', () => {
       internals(game).player2.points = 10;
       game.callEnvido('faltaEnvido', 1);
 
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
       expect(internals(game).player1.points).toBe(20);
       expect(internals(game).player2.points).toBe(10);
@@ -550,11 +544,11 @@ describe('TrucoGame', () => {
     it('clears the accumulated envido points after awarding them', () => {
       const game = deal();
       game.callEnvido('envido', 1);
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
-      expect(internals(game).currentEnvidoPoints).toBe(0);
+      expect(envidoInternals(game).currentEnvidoPoints).toBe(0);
 
-      game.setEnvidoPoints();
+      game.setPointsFromEnvido();
 
       expect(internals(game).player1.points).toBe(2);
     });
