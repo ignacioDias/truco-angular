@@ -1,5 +1,5 @@
 import { Card, Suit } from './card/card';
-import { PlayerId } from './truco-types';
+import { RoundResult } from './truco-types';
 
 const SPECIAL_POWERS = new Map<string, number>([
   [`1-${Suit.Swords}`, 14],
@@ -22,7 +22,7 @@ const RANK_POWERS = new Map<number, number>([
 
 export class RoundResolver {
 
-  public static resolveRound(player0Card: Card, player1Card: Card): PlayerId | 'parda' {
+  public static resolveRound(player0Card: Card, player1Card: Card): RoundResult {
     const result = RoundResolver.compareCards(player0Card, player1Card);
     return result > 0 ? 0 : result < 0 ? 1 : 'parda';
   }

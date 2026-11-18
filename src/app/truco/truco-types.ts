@@ -1,6 +1,7 @@
 import { Card } from './card/card';
 
 export type PlayerId = 0 | 1;
+export type RoundResult = 0 | 1 | 'parda';
 
 export type EnvidoCall = 'none' | 'envido' | 'realEnvido' | 'faltaEnvido';
 export type TrucoCall = 'none' | 'truco' | 'reTruco' | 'valeCuatro';
