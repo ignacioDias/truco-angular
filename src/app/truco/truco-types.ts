@@ -2,7 +2,7 @@ import { Card } from './card/card';
 
 export type PlayerId = 0 | 1;
 
-export type EnvidoCall = 'none' | 'envido' | 'dobleEnvido' | 'realEnvido' | 'faltaEnvido';
+export type EnvidoCall = 'none' | 'envido' | 'realEnvido' | 'faltaEnvido';
 export type TrucoCall = 'none' | 'truco' | 'reTruco' | 'valeCuatro';
 export type PlayedCards = [
   [Card | null, Card | null],

@@ -40,9 +40,6 @@ export class EnvidoCallState {
       if(!this.envidoPlayed && playedCards[userId]) {
         throw new Error("You cannot call Envido after playing a card");
       }
-      if(envidoCall === 'dobleEnvido' && this.currentCall !== 'envido') {
-        throw new Error("Invalid Envido call");
-      }
       if(!this.checkEnvidoCallValidity(envidoCall)) {
         throw new Error("Invalid Envido call");
       }
@@ -56,8 +53,6 @@ export class EnvidoCallState {
       switch (envidoCall) {
         case 'envido':
           return 2;
-        case 'dobleEnvido':
-          return 2;
         case 'realEnvido':
           return 3;
         default:
@@ -65,11 +60,13 @@ export class EnvidoCallState {
       }
     }
 
-    private checkEnvidoCallValidity(envidoCall: EnvidoCall): boolean {
+  private checkEnvidoCallValidity(envidoCall: EnvidoCall): boolean {
+      if(envidoCall === 'envido' && this.currentCall === 'envido') {
+        return true;
+      }
       const callOrder: Record<EnvidoCall, number> = {
         none: 0,
         envido: 1,
-        dobleEnvido: 2,
         realEnvido: 3,
         faltaEnvido: 4,
       };

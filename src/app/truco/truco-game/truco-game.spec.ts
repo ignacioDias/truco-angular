@@ -68,7 +68,7 @@ const envidoInternals = (game: TrucoGame): EnvidoCallStateInternals =>
 
 function mockDeck(cards: Card[] = deckCards()): void {
   let index = 0;
-  vi.spyOn(Deck.prototype, 'getRandomCard').mockImplementation(() => {
+  vi.spyOn(Deck.prototype, 'deal').mockImplementation(() => {
     const next = cards[index++];
     if (!next) {
       throw new Error('The mocked deck is empty');
@@ -113,6 +113,22 @@ describe('TrucoGame', () => {
 
       expect(internals(game).player1.hand).toEqual(cards.slice(0, 3));
       expect(internals(game).player2.hand).toEqual(cards.slice(3, 6));
+    });
+
+    it('never deals the same card twice to the same hand', () => {
+      const game = new TrucoGame('Nos', 'Ellos', 30);
+
+      for (let hand = 0; hand < 10; hand++) {
+        game.newHand();
+        const cards = [
+          ...internals(game).player1.hand,
+          ...internals(game).player2.hand,
+        ];
+        const keys = cards.map((c) => `${c.suit}-${c.numericValue}`);
+
+        expect(cards).toHaveLength(6);
+        expect(new Set(keys).size).toBe(6);
+      }
     });
 
     it('makes player 1 the mano and the first player on the first hand', () => {

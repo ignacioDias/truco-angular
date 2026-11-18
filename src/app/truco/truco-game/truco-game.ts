@@ -43,17 +43,17 @@ export class TrucoGame {
     this.setPlayersHands();
     this.envidoCallState.startNewHand(this.turnTracker.getMano(), this.player1.getEnvidoPoints(), this.player2.getEnvidoPoints());
     this.trucoCallState.startNewHand(this.turnTracker.getMano());
+    this.deck.shuffle();
   }
 
   private setPlayersHands() {
-    const cards = new Set<Card>();
-    while (cards.size < 6) {
-      const card = this.deck.getRandomCard();
-      cards.add(card);
+    const cards : Card[] = [];
+    while (cards.length < 6) {
+      const card = this.deck.deal();
+      cards.push(card);
     }
-    const cardsArray = Array.from(cards);
-    this.player1.setHand(cardsArray.slice(0, 3));
-    this.player2.setHand(cardsArray.slice(3, 6));
+    this.player1.setHand(cards.slice(0, 3));
+    this.player2.setHand(cards.slice(3, 6));
   }
 
   public playCard(playerId: number, cardIndex: number): void {

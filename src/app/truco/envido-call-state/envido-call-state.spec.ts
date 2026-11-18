@@ -147,31 +147,14 @@ describe('EnvidoCallState', () => {
       expect(internals(state).currentEnvidoPoints).toBe(5);
     });
 
-    it('rejects doble envido before envido', () => {
-      const state = newState(1);
-
-      expect(() => state.callEnvido('dobleEnvido', 1, noCardsPlayed())).toThrow(
-        'Invalid Envido call',
-      );
-    });
-
-    it('accepts envido followed by doble envido', () => {
+    it('accepts envido followed by envido', () => {
       const state = newState(1);
 
       state.callEnvido('envido', 1, noCardsPlayed());
-      state.callEnvido('dobleEnvido', 0, noCardsPlayed());
+      state.callEnvido('envido', 0, noCardsPlayed());
 
-      expect(internals(state).currentCall).toBe('dobleEnvido');
+      expect(internals(state).currentCall).toBe('envido');
       expect(internals(state).currentEnvidoPoints).toBe(4);
-    });
-
-    it('rejects doble envido after real envido', () => {
-      const state = newState(1);
-      state.callEnvido('realEnvido', 1, noCardsPlayed());
-
-      expect(() => state.callEnvido('dobleEnvido', 0, noCardsPlayed())).toThrow(
-        'Invalid Envido call',
-      );
     });
 
     it('accepts real envido as the first call', () => {
@@ -205,7 +188,7 @@ describe('EnvidoCallState', () => {
       const state = newState(1);
 
       state.callEnvido('envido', 1, noCardsPlayed());
-      state.callEnvido('dobleEnvido', 0, noCardsPlayed());
+      state.callEnvido('envido', 0, noCardsPlayed());
       state.callEnvido('realEnvido', 1, noCardsPlayed());
       state.callEnvido('faltaEnvido', 0, noCardsPlayed());
 
@@ -213,11 +196,11 @@ describe('EnvidoCallState', () => {
       expect(internals(state).currentEnvidoPoints).toBe(7);
     });
 
-    it('rejects repeating the same call', () => {
+    it('rejects repeating the same call other than envido', () => {
       const state = newState(1);
-      state.callEnvido('envido', 1, noCardsPlayed());
+      state.callEnvido('realEnvido', 1, noCardsPlayed());
 
-      expect(() => state.callEnvido('envido', 0, noCardsPlayed())).toThrow(
+      expect(() => state.callEnvido('realEnvido', 0, noCardsPlayed())).toThrow(
         'Invalid Envido call',
       );
     });
@@ -254,7 +237,7 @@ describe('EnvidoCallState', () => {
       const state = newState(1);
       state.callEnvido('envido', 1, noCardsPlayed());
 
-      expect(() => state.callEnvido('envido', 0, noCardsPlayed())).toThrow();
+      expect(() => state.callEnvido('none', 0, noCardsPlayed())).toThrow();
 
       expect(internals(state).currentCall).toBe('envido');
       expect(internals(state).currentEnvidoPoints).toBe(2);
@@ -317,10 +300,10 @@ describe('EnvidoCallState', () => {
       expect(state.awardEnvidoPoints(0, 30, player1, player2)).toEqual([0, 2]);
     });
 
-    it('awards 4 points for envido plus doble envido', () => {
+    it('awards 4 points for envido plus envido', () => {
       const state = newState(1, 33, 29);
       state.callEnvido('envido', 1, noCardsPlayed());
-      state.callEnvido('dobleEnvido', 0, noCardsPlayed());
+      state.callEnvido('envido', 0, noCardsPlayed());
       const [player1, player2] = players();
 
       expect(state.awardEnvidoPoints(1, 30, player1, player2)).toEqual([1, 4]);

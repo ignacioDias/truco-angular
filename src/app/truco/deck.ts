@@ -2,6 +2,7 @@ import { Card, Suit } from "./card/card";
 
 export class Deck {
   private cards: Card[] = this.generateDeck();
+  private shuffledCards: Card[] = this.shuffleArray(this.cards);
 
   private generateDeck() {
     const cards: Card[] = [];
@@ -14,17 +15,33 @@ export class Deck {
     return cards;
   }
 
-  public getRandomCard(): Card {
-    if (this.cards.length === 0) {
-      throw new Error("No enough cards in the deck");
+  private shuffleArray<T>(array: T[]): T[] {
+    const copy = [...array];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]]; // Swap elements
     }
-     return this.getRandomElement(this.cards)!;
+    return copy;
   }
 
-  private getRandomElement<T>(arr: T[]): T | undefined {
-    if (arr.length === 0) return undefined;
+  public shuffle(): void {
+    this.shuffledCards = this.shuffleArray(this.cards);
+  }
+
+  public deal(): Card {
+    if (this.shuffledCards.length === 0) {
+      throw new Error("No enough cards in the deck");
+    }
+    const randomIndex = this.getRandomIndex(this.shuffledCards);
+    const card = this.shuffledCards[randomIndex];
+    this.shuffledCards.splice(randomIndex, 1);
+    return card;
+  }
+
+  private getRandomIndex<T>(arr: T[]): number {
+    if (arr.length === 0) return -1;
     const randomIndex = Math.floor(Math.random() * arr.length);
-    return arr[randomIndex];
+    return randomIndex;
   }
 
 }
