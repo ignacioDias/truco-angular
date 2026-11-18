@@ -1,5 +1,5 @@
 import { Card, Suit } from '../card/card';
-import { RoundResult } from '../truco-types';
+import { PlayedCards, RoundResult, TrucoCall } from '../truco-types';
 
 const SPECIAL_POWERS = new Map<string, number>([
   [`1-${Suit.Swords}`, 14],
@@ -22,16 +22,30 @@ const RANK_POWERS = new Map<number, number>([
 
 export class RoundResolver {
 
-  public static resolveRound(player0Card: Card, player1Card: Card): RoundResult {
-    const result = RoundResolver.compareCards(player0Card, player1Card);
-    return result > 0
-      ? RoundResult.Player0
-      : result < 0
-        ? RoundResult.Player1
-        : RoundResult.Parda;
+  public static resolveHand(playedCards: PlayedCards): number {
+    var player0Points = 0;
+    var player1Points = 0;
+    for (let i = 0; i < 3; i++) {
+      const cardsComparation = RoundResolver.compareCards(playedCards[i][0], playedCards[i][1]);
+      if (cardsComparation > 0) {
+        player0Points++;
+      } else if (cardsComparation < 0) {
+        player1Points++;
+      }
+    }
+    return player0Points - player1Points;
   }
 
-  private static compareCards(card1: Card, card2: Card): number {
+  public static resolveRound(player0Card: Card | null, player1Card: Card | null): RoundResult {
+    const result = RoundResolver.compareCards(player0Card, player1Card);
+    return result > 0 ? RoundResult.Player0 : result < 0 ? RoundResult.Player1 : RoundResult.Parda;
+  }
+
+  private static compareCards(card1: Card | null, card2: Card | null): number {
+    if (card1 === null && card2 === null) return 0;
+    if (card1 === null) return -1;
+    if (card2 === null) return 1;
+
     const power1 = RoundResolver.getTrucoPower(card1);
     const power2 = RoundResolver.getTrucoPower(card2);
     return power1 - power2;

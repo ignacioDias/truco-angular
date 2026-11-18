@@ -1,10 +1,10 @@
 import { PlayedCards, PlayerId, TrucoCall, opponentOf } from '../truco-types';
 
 const CALL_ORDER: Record<TrucoCall, number> = {
-  [TrucoCall.None]: 0,
-  [TrucoCall.Truco]: 1,
-  [TrucoCall.ReTruco]: 2,
-  [TrucoCall.ValeCuatro]: 3,
+  [TrucoCall.None]: 1,
+  [TrucoCall.Truco]: 2,
+  [TrucoCall.ReTruco]: 3,
+  [TrucoCall.ValeCuatro]: 4,
 };
 
 export class TrucoCallState {

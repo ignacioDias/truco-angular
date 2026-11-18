@@ -5,6 +5,7 @@ import { EnvidoCall, PlayedCards, PlayerId, TrucoCall } from '../truco-types';
 import { TurnTracker } from '../turn-tracker/turn-tracker';
 import { TrucoCallState } from '../truco-call-state/truco-call-state';
 import { EnvidoCallState } from '../envido-call-state/envido-call-state';
+import { RoundResolver } from '../round-resolver/round-resolver';
 export class TrucoGame {
 
   private deck: Deck = new Deck();
@@ -16,7 +17,7 @@ export class TrucoGame {
   private playedCards: boolean[] = [false, false];
   private trucoCallState: TrucoCallState = new TrucoCallState();
   private envidoCallState: EnvidoCallState = new EnvidoCallState();
-
+  private playerGaveUpHand: PlayerId | null = null;
   constructor(player1Name: string, player2Name: string, pointsRequiredToWin: 15 | 30) {
     this.player1.name = player1Name;
     this.player2.name = player2Name;
@@ -27,12 +28,15 @@ export class TrucoGame {
     this.pointsRequiredToWin = points;
   }
 
-  public finishRound(): void {
-
+  public giveUpHand(playerId: PlayerId): void {
+    this.playerGaveUpHand = playerId;
+    this.finishHand()
+    this.newHand();
   }
 
   public nextRound(): void {
     if(this.turnTracker.getRound() >= 3) {
+      this.finishHand();
       this.newHand();
       return
     }
@@ -48,8 +52,25 @@ export class TrucoGame {
     this.envidoCallState.startNewHand(this.turnTracker.getMano(), this.player1.getEnvidoPoints(), this.player2.getEnvidoPoints());
     this.trucoCallState.startNewHand(this.turnTracker.getMano());
     this.deck.shuffle();
+    this.playerGaveUpHand = null;
   }
 
+  private finishHand(): void {
+    let winner: number = 0;
+    if (this.playerGaveUpHand != null) {
+      winner = this.playerGaveUpHand == 0 ? -1 : 1;
+    } else {
+      winner = RoundResolver.resolveHand(this.currentPlayedCards);
+    }
+    const trucoPoints = this.trucoCallState.getTrucoPoints();
+    if(winner == 0) {
+      this.addPointsToPlayer(this.turnTracker.getMano(), trucoPoints);
+    } else if (winner > 0) {
+      this.addPointsToPlayer(PlayerId.Player0, trucoPoints);
+    } else {
+      this.addPointsToPlayer(PlayerId.Player1, trucoPoints);
+    }
+  }
   private setPlayersHands() {
     const cards : Card[] = [];
     while (cards.length < 6) {
