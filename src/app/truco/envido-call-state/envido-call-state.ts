@@ -9,6 +9,7 @@ export class EnvidoCallState {
   private player2EnvidoPoints: number = 0;
   private envidoResolved = false;
   private envidoPlayed: boolean = false;
+  private doubleEnvidoCalled: boolean = false;
 
   public startNewHand(mano: PlayerId, player1EnvidoPoints: number, player2EnvidoPoints: number): void {
     this.currentCall = EnvidoCall.None;
@@ -18,7 +19,7 @@ export class EnvidoCallState {
     this.player1EnvidoPoints = player1EnvidoPoints;
     this.player2EnvidoPoints = player2EnvidoPoints;
     this.envidoResolved = false;
-
+    this.doubleEnvidoCalled = false;
   }
 
   public updateCurrentPlayerWithEnvido(currentPlayer: PlayerId): void {
@@ -39,6 +40,9 @@ export class EnvidoCallState {
       }
       if(!this.envidoPlayed && playedCards[userId]) {
         throw new Error("You cannot call Envido after playing a card");
+      }
+      if (envidoCall === EnvidoCall.Envido && this.currentCall === EnvidoCall.Envido && this.doubleEnvidoCalled) {
+        throw new Error("You can't call envido a third time")
       }
       if(!this.checkEnvidoCallValidity(envidoCall)) {
         throw new Error("Invalid Envido call");
@@ -61,10 +65,11 @@ export class EnvidoCallState {
     }
 
   private checkEnvidoCallValidity(envidoCall: EnvidoCall): boolean {
-      if(envidoCall === EnvidoCall.Envido && this.currentCall === EnvidoCall.Envido) {
-        return true;
-      }
-      const callOrder: Record<EnvidoCall, number> = {
+    if (envidoCall === EnvidoCall.Envido && this.currentCall === EnvidoCall.Envido) {
+      this.doubleEnvidoCalled = true;
+      return true;
+    }
+    const callOrder: Record<EnvidoCall, number> = {
         [EnvidoCall.None]: 0,
         [EnvidoCall.Envido]: 1,
         [EnvidoCall.RealEnvido]: 3,

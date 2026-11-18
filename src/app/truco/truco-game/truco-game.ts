@@ -34,6 +34,11 @@ export class TrucoGame {
     this.newHand();
   }
 
+  public getOptionsForPlayer(playerId: PlayerId): [TrucoCall[], EnvidoCall[]] {
+    return [[],[]]
+  }
+
+
   public nextRound(): void {
     if(this.turnTracker.getRound() >= 3) {
       this.finishHand();

@@ -66,6 +66,20 @@ describe('EnvidoCallState', () => {
       expect(internals(state).player1EnvidoPoints).toBe(20);
       expect(internals(state).player2EnvidoPoints).toBe(25);
     });
+
+    it('allows answering envido with envido again on a new hand', () => {
+      const state = newState(PlayerId.Player1);
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, noCardsPlayed());
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player0, noCardsPlayed());
+
+      state.startNewHand(PlayerId.Player1, 20, 25);
+
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, noCardsPlayed());
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player0, noCardsPlayed());
+
+      expect(internals(state).currentCall).toBe(EnvidoCall.Envido);
+      expect(internals(state).currentEnvidoPoints).toBe(4);
+    });
   });
 
   describe('updateCurrentPlayerWithEnvido', () => {
@@ -155,6 +169,20 @@ describe('EnvidoCallState', () => {
 
       expect(internals(state).currentCall).toBe(EnvidoCall.Envido);
       expect(internals(state).currentEnvidoPoints).toBe(4);
+    });
+
+    it('rejects a second answer of envido with envido', () => {
+      const state = newState(PlayerId.Player1);
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, noCardsPlayed());
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player0, noCardsPlayed());
+
+      expect(() => state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, noCardsPlayed())).toThrow(
+        "You can't call envido a third time",
+      );
+
+      expect(internals(state).currentCall).toBe(EnvidoCall.Envido);
+      expect(internals(state).currentEnvidoPoints).toBe(4);
+      expect(internals(state).currentPlayerWithEnvido).toBe(PlayerId.Player1);
     });
 
     it('accepts real envido as the first call', () => {
