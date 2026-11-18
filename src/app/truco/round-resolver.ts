@@ -24,7 +24,11 @@ export class RoundResolver {
 
   public static resolveRound(player0Card: Card, player1Card: Card): RoundResult {
     const result = RoundResolver.compareCards(player0Card, player1Card);
-    return result > 0 ? 0 : result < 0 ? 1 : 'parda';
+    return result > 0
+      ? RoundResult.Player0
+      : result < 0
+        ? RoundResult.Player1
+        : RoundResult.Parda;
   }
 
   private static compareCards(card1: Card, card2: Card): number {

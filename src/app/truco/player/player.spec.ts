@@ -1,4 +1,5 @@
 import { Card, Suit } from '../card/card';
+import { PlayerId } from '../truco-types';
 import { Player } from './player';
 
 const card = (numericValue: number, suit: Suit): Card =>
@@ -64,14 +65,14 @@ describe('Player', () => {
     ];
 
     it.each(cases)('$name', ({ hand, expected }) => {
-      const player = new Player(1, 'Test');
+      const player = new Player(PlayerId.Player1, 'Test');
       player.setHand(hand);
 
       expect(player.getEnvidoPoints()).toBe(expected);
     });
 
     it('returns 0 when the hand is empty', () => {
-      const player = new Player(1, 'Test');
+      const player = new Player(PlayerId.Player1, 'Test');
       player.setHand([]);
 
       expect(player.getEnvidoPoints()).toBe(0);

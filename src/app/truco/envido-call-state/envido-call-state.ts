@@ -2,7 +2,7 @@ import { EnvidoCall, PlayerId, opponentOf } from '../truco-types';
 import { Player } from '../player/player';
 export class EnvidoCallState {
 
-  private currentCall: EnvidoCall = 'none';
+  private currentCall: EnvidoCall = EnvidoCall.None;
   private currentEnvidoPoints: number = 0;
   private currentPlayerWithEnvido: number = -1;
   private player1EnvidoPoints: number = 0;
@@ -11,7 +11,7 @@ export class EnvidoCallState {
   private envidoPlayed: boolean = false;
 
   public startNewHand(mano: number, player1EnvidoPoints: number, player2EnvidoPoints: number): void {
-    this.currentCall = 'none';
+    this.currentCall = EnvidoCall.None;
     this.currentPlayerWithEnvido = mano;
     this.envidoPlayed = false;
     this.currentEnvidoPoints = 0;
@@ -51,9 +51,9 @@ export class EnvidoCallState {
 
     private convertEnvidoCallToPoints(envidoCall: EnvidoCall): number {
       switch (envidoCall) {
-        case 'envido':
+        case EnvidoCall.Envido:
           return 2;
-        case 'realEnvido':
+        case EnvidoCall.RealEnvido:
           return 3;
         default:
           return 0;
@@ -61,21 +61,21 @@ export class EnvidoCallState {
     }
 
   private checkEnvidoCallValidity(envidoCall: EnvidoCall): boolean {
-      if(envidoCall === 'envido' && this.currentCall === 'envido') {
+      if(envidoCall === EnvidoCall.Envido && this.currentCall === EnvidoCall.Envido) {
         return true;
       }
       const callOrder: Record<EnvidoCall, number> = {
-        none: 0,
-        envido: 1,
-        realEnvido: 3,
-        faltaEnvido: 4,
+        [EnvidoCall.None]: 0,
+        [EnvidoCall.Envido]: 1,
+        [EnvidoCall.RealEnvido]: 3,
+        [EnvidoCall.FaltaEnvido]: 4,
       };
       return callOrder[envidoCall] > callOrder[this.currentCall];
     }
 
     public awardEnvidoPoints(currentMano: number, pointsRequiredToWin: 15 | 30, player1: Player, player2: Player): [number, number] {
       const winner = this.player1EnvidoPoints > this.player2EnvidoPoints ||
-        (this.player1EnvidoPoints === this.player2EnvidoPoints && currentMano === 1) ? player1 : player2;
+        (this.player1EnvidoPoints === this.player2EnvidoPoints && currentMano === PlayerId.Player1) ? player1 : player2;
       const opponent = winner === player1 ? player2 : player1;
       const pointsToAdd = this.calculateEnvidoPoints(opponent, pointsRequiredToWin);
       const output: [number, number] = [winner.getId(), pointsToAdd];
@@ -84,7 +84,7 @@ export class EnvidoCallState {
     }
 
     private calculateEnvidoPoints(opponent: Player, pointsRequiredToWin: 15 | 30): number {
-      if (this.currentCall === 'faltaEnvido') {
+      if (this.currentCall === EnvidoCall.FaltaEnvido) {
         this.currentEnvidoPoints += pointsRequiredToWin - opponent.points;
       }
       const pointsToAdd = this.currentEnvidoPoints;

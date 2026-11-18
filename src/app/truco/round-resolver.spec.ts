@@ -1,5 +1,6 @@
 import { Card, Suit } from './card/card';
 import { RoundResolver } from './round-resolver';
+import { RoundResult } from './truco-types';
 
 const card = (numericValue: number, suit: Suit): Card =>
   new Card(numericValue, suit);
@@ -9,19 +10,19 @@ describe('RoundResolver', () => {
     it('returns 0 when the first card is stronger', () => {
       expect(
         RoundResolver.resolveRound(card(3, Suit.Cups), card(2, Suit.Cups)),
-      ).toBe(0);
+      ).toBe(RoundResult.Player0);
     });
 
     it('returns 1 when the second card is stronger', () => {
       expect(
         RoundResolver.resolveRound(card(2, Suit.Cups), card(3, Suit.Cups)),
-      ).toBe(1);
+      ).toBe(RoundResult.Player1);
     });
 
     it('returns parda when both cards have the same power', () => {
       expect(
         RoundResolver.resolveRound(card(3, Suit.Cups), card(3, Suit.Coins)),
-      ).toBe('parda');
+      ).toBe(RoundResult.Parda);
     });
   });
 
@@ -47,8 +48,8 @@ describe('RoundResolver', () => {
         const stronger = strongestToWeakest[index];
         const weaker = strongestToWeakest[index + 1];
 
-        expect(RoundResolver.resolveRound(stronger, weaker)).toBe(0);
-        expect(RoundResolver.resolveRound(weaker, stronger)).toBe(1);
+        expect(RoundResolver.resolveRound(stronger, weaker)).toBe(RoundResult.Player0);
+        expect(RoundResolver.resolveRound(weaker, stronger)).toBe(RoundResult.Player1);
       }
     });
 
@@ -67,7 +68,7 @@ describe('RoundResolver', () => {
       ];
 
       for (const [first, second] of samePowerPairs) {
-        expect(RoundResolver.resolveRound(first, second)).toBe('parda');
+        expect(RoundResolver.resolveRound(first, second)).toBe(RoundResult.Parda);
       }
     });
 
@@ -76,9 +77,9 @@ describe('RoundResolver', () => {
       const oneOfClubs = card(1, Suit.Clubs);
       const oneOfCoins = card(1, Suit.Coins);
 
-      expect(RoundResolver.resolveRound(oneOfSwords, oneOfClubs)).toBe(0);
-      expect(RoundResolver.resolveRound(oneOfClubs, oneOfCoins)).toBe(0);
-      expect(RoundResolver.resolveRound(oneOfCoins, oneOfSwords)).toBe(1);
+      expect(RoundResolver.resolveRound(oneOfSwords, oneOfClubs)).toBe(RoundResult.Player0);
+      expect(RoundResolver.resolveRound(oneOfClubs, oneOfCoins)).toBe(RoundResult.Player0);
+      expect(RoundResolver.resolveRound(oneOfCoins, oneOfSwords)).toBe(RoundResult.Player1);
     });
 
     it('ranks the special 7s above the other 7s', () => {
@@ -86,18 +87,18 @@ describe('RoundResolver', () => {
       const sevenOfCoins = card(7, Suit.Coins);
       const sevenOfCups = card(7, Suit.Cups);
 
-      expect(RoundResolver.resolveRound(sevenOfSwords, sevenOfCoins)).toBe(0);
-      expect(RoundResolver.resolveRound(sevenOfCoins, sevenOfCups)).toBe(0);
-      expect(RoundResolver.resolveRound(sevenOfCups, sevenOfSwords)).toBe(1);
+      expect(RoundResolver.resolveRound(sevenOfSwords, sevenOfCoins)).toBe(RoundResult.Player0);
+      expect(RoundResolver.resolveRound(sevenOfCoins, sevenOfCups)).toBe(RoundResult.Player0);
+      expect(RoundResolver.resolveRound(sevenOfCups, sevenOfSwords)).toBe(RoundResult.Player1);
     });
 
     it('places the special 7s below 3, 2, 1 and above 6', () => {
       const sevenOfCups = card(7, Suit.Cups);
 
-      expect(RoundResolver.resolveRound(sevenOfCups, card(3, Suit.Coins))).toBe(1);
-      expect(RoundResolver.resolveRound(sevenOfCups, card(2, Suit.Coins))).toBe(1);
-      expect(RoundResolver.resolveRound(sevenOfCups, card(1, Suit.Coins))).toBe(1);
-      expect(RoundResolver.resolveRound(sevenOfCups, card(6, Suit.Coins))).toBe(0);
+      expect(RoundResolver.resolveRound(sevenOfCups, card(3, Suit.Coins))).toBe(RoundResult.Player1);
+      expect(RoundResolver.resolveRound(sevenOfCups, card(2, Suit.Coins))).toBe(RoundResult.Player1);
+      expect(RoundResolver.resolveRound(sevenOfCups, card(1, Suit.Coins))).toBe(RoundResult.Player1);
+      expect(RoundResolver.resolveRound(sevenOfCups, card(6, Suit.Coins))).toBe(RoundResult.Player0);
     });
 
     it('places 12 and 11 between the 1s and the 7s', () => {
@@ -106,9 +107,9 @@ describe('RoundResolver', () => {
       const eleven = card(11, Suit.Swords);
       const sevenOfCups = card(7, Suit.Cups);
 
-      expect(RoundResolver.resolveRound(oneOfCups, twelve)).toBe(0);
-      expect(RoundResolver.resolveRound(twelve, eleven)).toBe(0);
-      expect(RoundResolver.resolveRound(eleven, sevenOfCups)).toBe(0);
+      expect(RoundResolver.resolveRound(oneOfCups, twelve)).toBe(RoundResult.Player0);
+      expect(RoundResolver.resolveRound(twelve, eleven)).toBe(RoundResult.Player0);
+      expect(RoundResolver.resolveRound(eleven, sevenOfCups)).toBe(RoundResult.Player0);
     });
   });
 });

@@ -93,7 +93,7 @@ export class TrucoGame {
       if(this.turnTracker.getRound() > 1) {
         throw new Error("You cannot call Envido after the first round");
       }
-      if(this.trucoCallState.getCall() !== 'none') {
+      if(this.trucoCallState.getCall() !== TrucoCall.None) {
         throw new Error('Envido cannot be called after Truco');
       }
     this.envidoCallState.callEnvido(envidoCall, userId, this.playedCards);

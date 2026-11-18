@@ -10,15 +10,15 @@ export class Bot {
 
   public getAnswerToEnvido(): EnvidoCall {
       if (this.player.getEnvidoPoints() < 22) {
-          return Math.random() < 0.2 ? 'envido' : 'none';
+          return Math.random() < 0.2 ? EnvidoCall.Envido : EnvidoCall.None;
       }
       if (this.player.getEnvidoPoints() < 25) {
-          return Math.random() < 0.1 ? 'envido' : 'realEnvido';
+          return Math.random() < 0.1 ? EnvidoCall.Envido : EnvidoCall.RealEnvido;
       }
       if (this.player.getEnvidoPoints() < 30) {
-          return Math.random() < 0.3 ? 'realEnvido' : 'faltaEnvido';
+          return Math.random() < 0.3 ? EnvidoCall.RealEnvido : EnvidoCall.FaltaEnvido;
       }
-      return 'faltaEnvido';
+      return EnvidoCall.FaltaEnvido;
   }
 
 

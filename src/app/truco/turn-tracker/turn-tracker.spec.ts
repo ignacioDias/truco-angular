@@ -1,3 +1,4 @@
+import { PlayerId } from '../truco-types';
 import { TurnTracker } from './turn-tracker';
 
 describe('TurnTracker', () => {
@@ -7,7 +8,7 @@ describe('TurnTracker', () => {
     });
 
     it('starts with player 0 on turn', () => {
-      expect(new TurnTracker().getCurrentPlayer()).toBe(0);
+      expect(new TurnTracker().getCurrentPlayer()).toBe(PlayerId.Player0);
     });
 
     it('has no mano until the first hand starts', () => {
@@ -25,7 +26,7 @@ describe('TurnTracker', () => {
       tracker.nextTurn();
       players.push(tracker.getCurrentPlayer());
 
-      expect(players).toEqual([0, 1, 0]);
+      expect(players).toEqual([PlayerId.Player0, PlayerId.Player1, PlayerId.Player0]);
     });
   });
 
@@ -57,8 +58,8 @@ describe('TurnTracker', () => {
 
       tracker.startNewHand();
 
-      expect(tracker.getMano()).toBe(1);
-      expect(tracker.getCurrentPlayer()).toBe(1);
+      expect(tracker.getMano()).toBe(PlayerId.Player1);
+      expect(tracker.getCurrentPlayer()).toBe(PlayerId.Player1);
     });
 
     it('alternates the mano between hands', () => {
@@ -67,8 +68,8 @@ describe('TurnTracker', () => {
       tracker.startNewHand();
       tracker.startNewHand();
 
-      expect(tracker.getMano()).toBe(0);
-      expect(tracker.getCurrentPlayer()).toBe(0);
+      expect(tracker.getMano()).toBe(PlayerId.Player0);
+      expect(tracker.getCurrentPlayer()).toBe(PlayerId.Player0);
     });
 
     it('goes back to the first round', () => {
