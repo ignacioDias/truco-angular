@@ -1,7 +1,9 @@
+import { PlayerId } from '../truco-types';
+
 export class TurnTracker {
   private currentTurn: number = 0;
   private currentRound: 1 | 2 | 3 = 1;
-  private mano: number = -1;
+  private mano: PlayerId = PlayerId.Player0;
   public nextTurn(): void {
     this.currentTurn++;
   }
@@ -16,18 +18,18 @@ export class TurnTracker {
     }
   }
 
-  public getMano(): number {
+  public getMano(): PlayerId {
     return this.mano;
   }
 
   public startNewHand(): void {
     this.currentTurn++;
-    this.mano = this.currentTurn % 2;
+    this.mano = this.getCurrentPlayer();
     this.currentRound = 1;
   }
 
-  public getCurrentPlayer(): number {
-    return this.currentTurn % 2;
+  public getCurrentPlayer(): PlayerId {
+    return this.currentTurn % 2 === PlayerId.Player0 ? PlayerId.Player0 : PlayerId.Player1;
   }
 
 }

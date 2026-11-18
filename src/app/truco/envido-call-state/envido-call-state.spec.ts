@@ -5,7 +5,7 @@ import { EnvidoCallState } from './envido-call-state';
 interface EnvidoCallStateInternals {
   currentCall: EnvidoCall;
   currentEnvidoPoints: number;
-  currentPlayerWithEnvido: number;
+  currentPlayerWithEnvido: PlayerId;
   player1EnvidoPoints: number;
   player2EnvidoPoints: number;
   envidoPlayed: boolean;

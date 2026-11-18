@@ -1,5 +1,5 @@
-import { Card, Suit } from './card/card';
-import { RoundResult } from './truco-types';
+import { Card, Suit } from '../card/card';
+import { RoundResult } from '../truco-types';
 
 const SPECIAL_POWERS = new Map<string, number>([
   [`1-${Suit.Swords}`, 14],

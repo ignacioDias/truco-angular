@@ -1,6 +1,6 @@
-import { Card, Suit } from './card/card';
+import { Card, Suit } from '../card/card';
 import { RoundResolver } from './round-resolver';
-import { RoundResult } from './truco-types';
+import { RoundResult } from '../truco-types';
 
 const card = (numericValue: number, suit: Suit): Card =>
   new Card(numericValue, suit);

@@ -11,8 +11,8 @@ describe('TurnTracker', () => {
       expect(new TurnTracker().getCurrentPlayer()).toBe(PlayerId.Player0);
     });
 
-    it('has no mano until the first hand starts', () => {
-      expect(new TurnTracker().getMano()).toBe(-1);
+    it('defaults the mano to player 0 until the first hand starts', () => {
+      expect(new TurnTracker().getMano()).toBe(PlayerId.Player0);
     });
   });
 

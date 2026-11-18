@@ -9,17 +9,17 @@ const CALL_ORDER: Record<TrucoCall, number> = {
 
 export class TrucoCallState {
   private call: TrucoCall = TrucoCall.None;
-  private playerToCall: number = -1;
+  private playerToCall: PlayerId = PlayerId.Player0;
 
   public getCall(): TrucoCall {
     return this.call;
   }
 
-  public getPlayerToCall(): number {
+  public getPlayerToCall(): PlayerId {
     return this.playerToCall;
   }
 
-  public startNewHand(mano: number): void {
+  public startNewHand(mano: PlayerId): void {
     this.call = TrucoCall.None;
     this.playerToCall = mano;
   }
@@ -41,5 +41,9 @@ export class TrucoCallState {
 
   private isValidCall(trucoCall: TrucoCall): boolean {
     return CALL_ORDER[trucoCall] === CALL_ORDER[this.call] + 1;
+  }
+
+  public getTrucoPoints(): number {
+    return CALL_ORDER[this.call];
   }
 }

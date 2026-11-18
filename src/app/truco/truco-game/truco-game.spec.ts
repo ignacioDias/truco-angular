@@ -53,7 +53,7 @@ interface TrucoGameInternals {
 interface EnvidoCallStateInternals {
   currentCall: EnvidoCall;
   currentEnvidoPoints: number;
-  currentPlayerWithEnvido: number;
+  currentPlayerWithEnvido: PlayerId;
   player1EnvidoPoints: number;
   player2EnvidoPoints: number;
   envidoPlayed: boolean;
@@ -592,7 +592,7 @@ describe('TrucoGame', () => {
     it('throws when the player id is invalid', () => {
       const game = new TrucoGame('Nos', 'Ellos', 30);
 
-      expect(() => game.addPointsToPlayer(2, 1)).toThrow('Invalid player ID');
+      expect(() => game.addPointsToPlayer(2 as PlayerId, 1)).toThrow('Invalid player ID');
     });
   });
 });

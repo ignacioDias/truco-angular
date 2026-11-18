@@ -9,8 +9,8 @@ export class TrucoGame {
 
   private deck: Deck = new Deck();
   private pointsRequiredToWin: 15 | 30 = 30;
-  private player1: Player = new Player(1, 'Nos');
-  private player2: Player = new Player(0, 'Ellos');
+  private player1: Player = new Player(PlayerId.Player1, 'Nos');
+  private player2: Player = new Player(PlayerId.Player0, 'Ellos');
   private turnTracker: TurnTracker = new TurnTracker();
   private currentPlayedCards: PlayedCards = [[null, null], [null, null], [null, null]];
   private playedCards: boolean[] = [false, false];
@@ -25,6 +25,10 @@ export class TrucoGame {
 
   public setPointsRequiredToWin(points: 15 | 30) {
     this.pointsRequiredToWin = points;
+  }
+
+  public finishRound(): void {
+
   }
 
   public nextRound(): void {
@@ -56,14 +60,14 @@ export class TrucoGame {
     this.player2.setHand(cards.slice(3, 6));
   }
 
-  public playCard(playerId: number, cardIndex: number): void {
+  public playCard(playerId: PlayerId, cardIndex: number): void {
     if (playerId !== this.turnTracker.getCurrentPlayer()) {
       throw new Error("It's not your turn");
     }
     if(this.playedCards[playerId]) {
       throw new Error("You have already played a card this round");
     }
-    const player = playerId === 0 ? this.player2 : this.player1;
+    const player = playerId === PlayerId.Player0 ? this.player2 : this.player1;
     if (cardIndex < 0 || cardIndex >= player.hand.length) {
       throw new Error("Invalid card index");
     }
@@ -104,14 +108,16 @@ export class TrucoGame {
     this.addPointsToPlayer(winnerId, pointsToAdd);
   }
 
-  public addPointsToPlayer(playerId: number, points: number): void {
-    if (playerId === 0) {
+  public addPointsToPlayer(playerId: PlayerId, points: number): void {
+    if (playerId === PlayerId.Player0) {
       this.player2.points += points;
-    } else if (playerId === 1) {
+    } else if (playerId === PlayerId.Player1) {
       this.player1.points += points;
     } else {
       throw new Error("Invalid player ID");
     }
   }
+
+
 
 }

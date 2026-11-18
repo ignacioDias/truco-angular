@@ -1,17 +1,18 @@
 import { Card, Suit } from '../card/card';
+import { PlayerId } from '../truco-types';
 
 export class Player {
-  private id: number = 0;
+  private id: PlayerId = PlayerId.Player0;
   name: string = '';
   hand: Card[] = [];
   points: number = 0;
 
-  constructor(id: number, name: string) {
+  constructor(id: PlayerId, name: string) {
     this.id = id;
     this.name = name;
   }
 
-  public getId(): number {
+  public getId(): PlayerId {
     return this.id;
   }
 
