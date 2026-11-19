@@ -23,7 +23,7 @@ function newState(
   player2EnvidoPoints = 29,
 ): EnvidoCallState {
   const state = new EnvidoCallState();
-  state.startNewHand(mano, player1EnvidoPoints, player2EnvidoPoints);
+  state.startNewHand(player1EnvidoPoints, player2EnvidoPoints);
   return state;
 }
 
@@ -56,7 +56,7 @@ describe('EnvidoCallState', () => {
       const [player1, player2] = players();
       state.awardEnvidoPoints(PlayerId.Player1, 30, player1, player2);
 
-      state.startNewHand(PlayerId.Player0, 20, 25);
+      state.startNewHand(20, 25);
 
       expect(internals(state).currentCall).toBe(EnvidoCall.None);
       expect(internals(state).currentPlayerWithEnvido).toBe(PlayerId.Player0);
@@ -72,7 +72,7 @@ describe('EnvidoCallState', () => {
       state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, noCardsPlayed());
       state.callEnvido(EnvidoCall.Envido, PlayerId.Player0, noCardsPlayed());
 
-      state.startNewHand(PlayerId.Player1, 20, 25);
+      state.startNewHand(20, 25);
 
       state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, noCardsPlayed());
       state.callEnvido(EnvidoCall.Envido, PlayerId.Player0, noCardsPlayed());

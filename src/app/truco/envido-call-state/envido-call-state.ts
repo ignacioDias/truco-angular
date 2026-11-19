@@ -31,6 +31,13 @@ export class EnvidoCallState {
     return this.envidoPlayed;
   }
 
+  public getPointsForEnvidoRejected(): number {
+    this.envidoResolved = true;
+    const pointsBeforeCall =
+      this.currentEnvidoPoints - this.convertEnvidoCallToPoints(this.currentCall);
+    return Math.max(1, pointsBeforeCall);
+  }
+
   public callEnvido(envidoCall: EnvidoCall, userId: PlayerId, playedCards: boolean[]): void {
       if(this.envidoResolved) {
         throw new Error("Envido has already been resolved");

@@ -124,18 +124,20 @@ export class TrucoGame {
     this.callTruco(trucoCall, opponentOf(playerWhoAnswers));
   }
 
-  public answerEnvido(accepted: boolean, envidoCall: EnvidoCall, playerWhoAnswers: PlayerId): void {
-    if (!accepted) {
-      return;
-    }
-    this.callEnvido(envidoCall, opponentOf(playerWhoAnswers));
-  }
-
-  private callTruco(trucoCall: TrucoCall, userId: PlayerId): void {
+  protected callTruco(trucoCall: TrucoCall, userId: PlayerId): void {
     this.trucoCallState.callTruco(trucoCall, userId, this.currentPlayedCards);
   }
 
-  private callEnvido(envidoCall: EnvidoCall, userId: PlayerId): void {
+  public answerEnvido(accepted: boolean, envidoCall: EnvidoCall, playerWhoAnswers: PlayerId): void {
+    if (!accepted) {
+      const points = this.envidoCallState.getPointsForEnvidoRejected();
+      this.addPointsToPlayer(opponentOf(playerWhoAnswers), points);
+      return;
+    }
+    this.callEnvido(envidoCall, playerWhoAnswers);
+  }
+
+  protected callEnvido(envidoCall: EnvidoCall, userId: PlayerId): void {
       if(this.turnTracker.getRound() > 1) {
         throw new Error("You cannot call Envido after the first round");
       }
