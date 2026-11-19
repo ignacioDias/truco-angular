@@ -10,7 +10,6 @@ const CALL_ORDER: Record<TrucoCall, number> = {
 export class TrucoCallState {
   private call: TrucoCall = TrucoCall.None;
   private playerToCall: PlayerId = PlayerId.Player0;
-
   public getCall(): TrucoCall {
     return this.call;
   }
@@ -19,9 +18,9 @@ export class TrucoCallState {
     return this.playerToCall;
   }
 
-  public startNewHand(mano: PlayerId): void {
+  public startNewHand(): void {
     this.call = TrucoCall.None;
-    this.playerToCall = mano;
+    this.playerToCall = PlayerId.Player0;
   }
 
   public callTruco(trucoCall: TrucoCall, playerId: PlayerId, playedCards: PlayedCards): void {

@@ -1,7 +1,7 @@
 import { Deck } from '../deck';
 import { Player } from '../player/player';
 import { Card } from '../card/card';
-import { EnvidoCall, PlayedCards, PlayerId, TrucoCall } from '../truco-types';
+import { EnvidoCall, opponentOf, PlayedCards, PlayerId, TrucoCall } from '../truco-types';
 import { TurnTracker } from '../turn-tracker/turn-tracker';
 import { TrucoCallState } from '../truco-call-state/truco-call-state';
 import { EnvidoCallState } from '../envido-call-state/envido-call-state';
@@ -34,6 +34,7 @@ export class TrucoGame {
     this.newHand();
   }
 
+  //TODO
   public getOptionsForPlayer(playerId: PlayerId): [TrucoCall[], EnvidoCall[]] {
     return [[],[]]
   }
@@ -54,8 +55,8 @@ export class TrucoGame {
     this.turnTracker.startNewHand();
     this.playedCards = [false, false];
     this.setPlayersHands();
-    this.envidoCallState.startNewHand(this.turnTracker.getMano(), this.player1.getEnvidoPoints(), this.player2.getEnvidoPoints());
-    this.trucoCallState.startNewHand(this.turnTracker.getMano());
+    this.envidoCallState.startNewHand(this.player1.getEnvidoPoints(), this.player2.getEnvidoPoints());
+    this.trucoCallState.startNewHand();
     this.deck.shuffle();
     this.playerGaveUpHand = null;
   }
@@ -115,11 +116,26 @@ export class TrucoGame {
     return null;
   }
 
-  public callTruco(trucoCall: TrucoCall, userId: PlayerId): void {
+  public answerTruco(accepted: boolean, trucoCall: TrucoCall, playerWhoAnswers: PlayerId): void {
+    if (!accepted) {
+      this.giveUpHand(playerWhoAnswers);
+      return;
+    }
+    this.callTruco(trucoCall, opponentOf(playerWhoAnswers));
+  }
+
+  public answerEnvido(accepted: boolean, envidoCall: EnvidoCall, playerWhoAnswers: PlayerId): void {
+    if (!accepted) {
+      return;
+    }
+    this.callEnvido(envidoCall, opponentOf(playerWhoAnswers));
+  }
+
+  private callTruco(trucoCall: TrucoCall, userId: PlayerId): void {
     this.trucoCallState.callTruco(trucoCall, userId, this.currentPlayedCards);
   }
 
-  public callEnvido(envidoCall: EnvidoCall, userId: PlayerId): void {
+  private callEnvido(envidoCall: EnvidoCall, userId: PlayerId): void {
       if(this.turnTracker.getRound() > 1) {
         throw new Error("You cannot call Envido after the first round");
       }
@@ -143,7 +159,4 @@ export class TrucoGame {
       throw new Error("Invalid player ID");
     }
   }
-
-
-
 }

@@ -11,9 +11,9 @@ export class EnvidoCallState {
   private envidoPlayed: boolean = false;
   private doubleEnvidoCalled: boolean = false;
 
-  public startNewHand(mano: PlayerId, player1EnvidoPoints: number, player2EnvidoPoints: number): void {
+  public startNewHand(player1EnvidoPoints: number, player2EnvidoPoints: number): void {
     this.currentCall = EnvidoCall.None;
-    this.currentPlayerWithEnvido = mano;
+    this.currentPlayerWithEnvido = PlayerId.Player0;
     this.envidoPlayed = false;
     this.currentEnvidoPoints = 0;
     this.player1EnvidoPoints = player1EnvidoPoints;
@@ -35,7 +35,7 @@ export class EnvidoCallState {
       if(this.envidoResolved) {
         throw new Error("Envido has already been resolved");
       }
-      if(this.currentPlayerWithEnvido !== userId) {
+      if(this.currentPlayerWithEnvido !== userId && this.currentCall != EnvidoCall.None) {
         throw new Error("It's not your turn to call Envido");
       }
       if(!this.envidoPlayed && playedCards[userId]) {
