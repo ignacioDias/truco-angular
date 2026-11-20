@@ -68,13 +68,16 @@ export class TrucoGame {
     } else {
       winner = RoundResolver.resolveHand(this.currentPlayedCards);
     }
-    const trucoPoints = this.trucoCallState.getTrucoPoints();
+    let points = this.trucoCallState.getTrucoPoints();
+    if (this.envidoCallState.envidoHasntBeenCalled() && this.turnTracker.getRound() == 1) {
+      points++; //if you surrender in first round before envido is called, you get an extra point
+    }
     if(winner == 0) {
-      this.addPointsToPlayer(this.turnTracker.getMano(), trucoPoints);
+      this.addPointsToPlayer(this.turnTracker.getMano(), points);
     } else if (winner > 0) {
-      this.addPointsToPlayer(PlayerId.Player0, trucoPoints);
+      this.addPointsToPlayer(PlayerId.Player0, points);
     } else {
-      this.addPointsToPlayer(PlayerId.Player1, trucoPoints);
+      this.addPointsToPlayer(PlayerId.Player1, points);
     }
   }
   private setPlayersHands() {
@@ -131,6 +134,7 @@ export class TrucoGame {
   public answerEnvido(accepted: boolean, envidoCall: EnvidoCall, playerWhoAnswers: PlayerId): void {
     if (!accepted) {
       const points = this.envidoCallState.getPointsForEnvidoRejected();
+      this.envidoCallState.resolveEnvido();
       this.addPointsToPlayer(opponentOf(playerWhoAnswers), points);
       return;
     }

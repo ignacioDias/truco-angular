@@ -22,6 +22,14 @@ export class EnvidoCallState {
     this.doubleEnvidoCalled = false;
   }
 
+  public resolveEnvido(): void {
+    this.envidoResolved = true;
+  }
+
+  public envidoHasntBeenCalled(): boolean {
+    return this.currentCall === EnvidoCall.None && !this.envidoResolved;
+  }
+
   public updateCurrentPlayerWithEnvido(currentPlayer: PlayerId): void {
     if (!this.envidoPlayed) {
       this.currentPlayerWithEnvido = currentPlayer;
