@@ -22,18 +22,54 @@ const RANK_POWERS = new Map<number, number>([
 
 export class RoundResolver {
 
+  /**
+   * Returns a positive number when player 0 wins the hand, a negative number when
+   * player 1 wins it, and 0 when every round was a parda (the mano wins).
+   *
+   * The player with more rounds wins. On a tie (one round each, the other being a
+   * parda) the winner of the first decided round wins the hand.
+   */
   public static resolveHand(playedCards: PlayedCards): number {
-    var player0Points = 0;
-    var player1Points = 0;
+    let player0Rounds = 0;
+    let player1Rounds = 0;
+    let firstDecidedRound = 0;
     for (let i = 0; i < 3; i++) {
-      const cardsComparation = RoundResolver.compareCards(playedCards[i][0], playedCards[i][1]);
-      if (cardsComparation > 0) {
-        player0Points++;
-      } else if (cardsComparation < 0) {
-        player1Points++;
+      const roundResult = Math.sign(RoundResolver.compareCards(playedCards[i][0], playedCards[i][1]));
+      if (roundResult > 0) {
+        player0Rounds++;
+      } else if (roundResult < 0) {
+        player1Rounds++;
+      }
+      if (firstDecidedRound === 0) {
+        firstDecidedRound = roundResult;
       }
     }
-    return player0Points - player1Points;
+    if (player0Rounds !== player1Rounds) {
+      return player0Rounds - player1Rounds;
+    }
+    return firstDecidedRound;
+  }
+
+  /**
+   * Tells whether the hand is over once `completedRounds` rounds have been played.
+   * After the second round the hand is over when:
+   * - the first round was a parda and the second one was not,
+   * - the first round was won and the second one was a parda or won by the same player.
+   * Otherwise the third round decides it.
+   */
+  public static isHandResolved(playedCards: PlayedCards, completedRounds: number): boolean {
+    if (completedRounds >= 3) {
+      return true;
+    }
+    if (completedRounds < 2) {
+      return false;
+    }
+    const firstRound = Math.sign(RoundResolver.compareCards(playedCards[0][0], playedCards[0][1]));
+    const secondRound = Math.sign(RoundResolver.compareCards(playedCards[1][0], playedCards[1][1]));
+    if (firstRound === 0) {
+      return secondRound !== 0;
+    }
+    return secondRound === 0 || secondRound === firstRound;
   }
 
   public static resolveRound(player0Card: Card | null, player1Card: Card | null): RoundResult {
@@ -41,7 +77,7 @@ export class RoundResolver {
     return result > 0 ? RoundResult.Player0 : result < 0 ? RoundResult.Player1 : RoundResult.Parda;
   }
 
-  private static compareCards(card1: Card | null, card2: Card | null): number {
+  public static compareCards(card1: Card | null, card2: Card | null): number {
     if (card1 === null && card2 === null) return 0;
     if (card1 === null) return -1;
     if (card2 === null) return 1;

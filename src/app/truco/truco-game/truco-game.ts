@@ -1,7 +1,7 @@
 import { Deck } from '../deck';
 import { Player } from '../player/player';
 import { Card } from '../card/card';
-import { EnvidoCall, opponentOf, PlayedCards, PlayerId, TrucoCall } from '../truco-types';
+import { EnvidoCall, opponentOf, PlayedCards, PlayerId, RoundResult, TrucoCall } from '../truco-types';
 import { TurnTracker } from '../turn-tracker/turn-tracker';
 import { TrucoCallState } from '../truco-call-state/truco-call-state';
 import { EnvidoCallState } from '../envido-call-state/envido-call-state';
@@ -14,7 +14,7 @@ export class TrucoGame {
   private player2: Player = new Player(PlayerId.Player0, 'Ellos');
   private turnTracker: TurnTracker = new TurnTracker();
   private currentPlayedCards: PlayedCards = [[null, null], [null, null], [null, null]];
-  private playedCards: boolean[] = [false, false];
+  private playedCardsThisRound: boolean[] = [false, false];
   private trucoCallState: TrucoCallState = new TrucoCallState();
   private envidoCallState: EnvidoCallState = new EnvidoCallState();
   private playerGaveUpHand: PlayerId | null = null;
@@ -40,20 +40,27 @@ export class TrucoGame {
   }
 
 
+  /**
+   * Must be called once both players have played their card of the round. It ends the
+   * hand when it is already decided, otherwise it moves on to the next round.
+   */
   public nextRound(): void {
-    if(this.turnTracker.getRound() >= 3) {
+    const round = this.turnTracker.getRound();
+    if (RoundResolver.isHandResolved(this.currentPlayedCards, round)) {
       this.finishHand();
       this.newHand();
-      return
+      return;
     }
-    this.playedCards = [false, false];
-    this.turnTracker.nextRound();
+    const [player0Card, player1Card] = this.currentPlayedCards[round - 1];
+    const roundResult = RoundResolver.resolveRound(player0Card, player1Card);
+    this.playedCardsThisRound = [false, false];
+    this.turnTracker.nextRound(roundResult === RoundResult.Parda ? null : roundResult);
   }
 
   public newHand(): void {
     this.currentPlayedCards = [[null, null], [null, null], [null, null]];
     this.turnTracker.startNewHand();
-    this.playedCards = [false, false];
+    this.playedCardsThisRound = [false, false];
     this.setPlayersHands();
     this.envidoCallState.startNewHand(this.player1.getEnvidoPoints(), this.player2.getEnvidoPoints());
     this.trucoCallState.startNewHand();
@@ -94,14 +101,14 @@ export class TrucoGame {
     if (playerId !== this.turnTracker.getCurrentPlayer()) {
       throw new Error("It's not your turn");
     }
-    if(this.playedCards[playerId]) {
+    if(this.playedCardsThisRound[playerId]) {
       throw new Error("You have already played a card this round");
     }
     const player = playerId === PlayerId.Player0 ? this.player2 : this.player1;
     if (cardIndex < 0 || cardIndex >= player.hand.length) {
       throw new Error("Invalid card index");
     }
-    this.playedCards[playerId] = true;
+    this.playedCardsThisRound[playerId] = true;
     this.currentPlayedCards[this.turnTracker.getRound() - 1][playerId] = player.hand[cardIndex];
     player.hand.splice(cardIndex, 1);
     this.turnTracker.nextTurn();
@@ -125,6 +132,7 @@ export class TrucoGame {
       return;
     }
     this.callTruco(trucoCall, opponentOf(playerWhoAnswers));
+    this.envidoCallState.resolveEnvido();
   }
 
   protected callTruco(trucoCall: TrucoCall, userId: PlayerId): void {
@@ -142,13 +150,13 @@ export class TrucoGame {
   }
 
   protected callEnvido(envidoCall: EnvidoCall, userId: PlayerId): void {
-      if(this.turnTracker.getRound() > 1) {
-        throw new Error("You cannot call Envido after the first round");
-      }
-      if(this.trucoCallState.getCall() !== TrucoCall.None) {
-        throw new Error('Envido cannot be called after Truco');
-      }
-    this.envidoCallState.callEnvido(envidoCall, userId, this.playedCards);
+    if(this.turnTracker.getRound() > 1) {
+      throw new Error("You cannot call Envido after the first round");
+    }
+    if(this.trucoCallState.getCall() !== TrucoCall.None) {
+      throw new Error('Envido cannot be called after Truco');
+    }
+    this.envidoCallState.callEnvido(envidoCall, userId, this.playedCardsThisRound);
   }
 
   public setPointsFromEnvido(): void {

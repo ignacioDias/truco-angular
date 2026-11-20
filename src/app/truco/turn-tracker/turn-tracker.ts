@@ -1,21 +1,27 @@
-import { PlayerId } from '../truco-types';
+import { opponentOf, PlayerId } from '../truco-types';
 
 export class TurnTracker {
-  private currentTurn: number = 0;
   private currentRound: 1 | 2 | 3 = 1;
   private mano: PlayerId = PlayerId.Player0;
+  private currentPlayer: PlayerId = PlayerId.Player0;
+
   public nextTurn(): void {
-    this.currentTurn++;
+    this.currentPlayer = opponentOf(this.currentPlayer);
   }
 
   public getRound(): 1 | 2 | 3 {
     return this.currentRound;
   }
 
-  public nextRound(): void {
-    if(this.currentRound < 3) {
+  /**
+   * Moves to the next round. The winner of the previous round plays first; after a
+   * parda (`null`) the mano plays first.
+   */
+  public nextRound(roundWinner: PlayerId | null = null): void {
+    if (this.currentRound < 3) {
       this.currentRound++;
     }
+    this.currentPlayer = roundWinner ?? this.mano;
   }
 
   public getMano(): PlayerId {
@@ -23,13 +29,13 @@ export class TurnTracker {
   }
 
   public startNewHand(): void {
-    this.currentTurn++;
-    this.mano = this.getCurrentPlayer();
+    this.mano = opponentOf(this.mano);
     this.currentRound = 1;
+    this.currentPlayer = this.mano;
   }
 
   public getCurrentPlayer(): PlayerId {
-    return this.currentTurn % 2 === PlayerId.Player0 ? PlayerId.Player0 : PlayerId.Player1;
+    return this.currentPlayer;
   }
 
 }

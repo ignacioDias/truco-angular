@@ -28,6 +28,15 @@ describe('TurnTracker', () => {
 
       expect(players).toEqual([PlayerId.Player0, PlayerId.Player1, PlayerId.Player0]);
     });
+
+    it('gives the turn to the opponent of the mano after the first card of a hand', () => {
+      const tracker = new TurnTracker();
+      tracker.startNewHand();
+
+      tracker.nextTurn();
+
+      expect(tracker.getCurrentPlayer()).toBe(PlayerId.Player0);
+    });
   });
 
   describe('nextRound', () => {
@@ -50,6 +59,40 @@ describe('TurnTracker', () => {
 
       expect(tracker.getRound()).toBe(3);
     });
+
+    it.each([PlayerId.Player0, PlayerId.Player1])(
+      'lets the winner of the round (player %s) play first',
+      (winner) => {
+        const tracker = new TurnTracker();
+        tracker.startNewHand();
+
+        tracker.nextRound(winner);
+
+        expect(tracker.getCurrentPlayer()).toBe(winner);
+      },
+    );
+
+    it('lets the mano play first after a parda', () => {
+      const tracker = new TurnTracker();
+      tracker.startNewHand();
+      tracker.nextTurn();
+      tracker.nextTurn();
+      tracker.nextTurn();
+
+      tracker.nextRound(null);
+
+      expect(tracker.getCurrentPlayer()).toBe(tracker.getMano());
+    });
+
+    it('lets the mano play first when no winner is given', () => {
+      const tracker = new TurnTracker();
+      tracker.startNewHand();
+      tracker.nextTurn();
+
+      tracker.nextRound();
+
+      expect(tracker.getCurrentPlayer()).toBe(tracker.getMano());
+    });
   });
 
   describe('startNewHand', () => {
@@ -70,6 +113,18 @@ describe('TurnTracker', () => {
 
       expect(tracker.getMano()).toBe(PlayerId.Player0);
       expect(tracker.getCurrentPlayer()).toBe(PlayerId.Player0);
+    });
+
+    it('starts on the first round with the mano on turn', () => {
+      const tracker = new TurnTracker();
+      tracker.startNewHand();
+      tracker.nextTurn();
+      tracker.nextRound(PlayerId.Player0);
+
+      tracker.startNewHand();
+
+      expect(tracker.getRound()).toBe(1);
+      expect(tracker.getCurrentPlayer()).toBe(tracker.getMano());
     });
 
     it('goes back to the first round', () => {
