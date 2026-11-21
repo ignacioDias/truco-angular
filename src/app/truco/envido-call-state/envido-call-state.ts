@@ -39,6 +39,41 @@ export class EnvidoCallState {
     return this.envidoPlayed;
   }
 
+  public getEnvidoResolved(): boolean {
+    return this.envidoResolved;
+  }
+
+  public getCall(): EnvidoCall {
+    return this.currentCall;
+  }
+
+  /** Calls `userId` can make right now, following the same rules as `callEnvido`. */
+  public getAvailableEnvidoCallsFor(userId: PlayerId, playedCards: boolean[]): EnvidoCall[] {
+    if (this.currentCall !== EnvidoCall.None && this.currentPlayerWithEnvido !== userId) {
+      return [];
+    }
+    if (!this.envidoPlayed && playedCards[userId]) {
+      return [];
+    }
+    return this.getAvailableEnvidoCalls();
+  }
+
+  public getAvailableEnvidoCalls(): EnvidoCall[] {
+    if (this.envidoResolved || this.currentCall === EnvidoCall.FaltaEnvido) {
+      return [];
+    }
+    if (this.currentCall === EnvidoCall.None || (this.currentCall === EnvidoCall.Envido && !this.doubleEnvidoCalled)) {
+      return [EnvidoCall.Envido, EnvidoCall.RealEnvido, EnvidoCall.FaltaEnvido];
+    }
+    if (this.currentCall === EnvidoCall.Envido) {
+      return [EnvidoCall.RealEnvido, EnvidoCall.FaltaEnvido];
+    }
+    if(this.currentCall === EnvidoCall.RealEnvido) {
+      return [EnvidoCall.FaltaEnvido];
+    }
+    return [];
+  }
+
   public getPointsForEnvidoRejected(): number {
     this.envidoResolved = true;
     const pointsBeforeCall =

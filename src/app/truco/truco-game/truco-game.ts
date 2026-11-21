@@ -34,16 +34,16 @@ export class TrucoGame {
     this.newHand();
   }
 
-  //TODO
   public getOptionsForPlayer(playerId: PlayerId): [TrucoCall[], EnvidoCall[]] {
-    return [[],[]]
+    const trucoCalls = this.trucoCallState.getNextTrucoCallsFor(playerId, this.currentPlayedCards);
+    const envidoIsOpen =
+      this.turnTracker.getRound() === 1 && this.trucoCallState.getCall() === TrucoCall.None;
+    const envidoCalls = envidoIsOpen
+      ? this.envidoCallState.getAvailableEnvidoCallsFor(playerId, this.playedCardsThisRound)
+      : [];
+    return [trucoCalls, envidoCalls];
   }
 
-
-  /**
-   * Must be called once both players have played their card of the round. It ends the
-   * hand when it is already decided, otherwise it moves on to the next round.
-   */
   public nextRound(): void {
     const round = this.turnTracker.getRound();
     if (RoundResolver.isHandResolved(this.currentPlayedCards, round)) {

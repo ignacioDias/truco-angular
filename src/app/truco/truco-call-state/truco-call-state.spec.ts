@@ -235,6 +235,45 @@ describe('TrucoCallState', () => {
     });
   });
 
+  describe('getNextTrucoCallsFor', () => {
+    it.each([PlayerId.Player0, PlayerId.Player1])(
+      'offers the truco to player %s when nobody called',
+      (playerId) => {
+        expect(newState().getNextTrucoCallsFor(playerId, emptyTable())).toEqual([TrucoCall.Truco]);
+      },
+    );
+
+    it('offers the next level only to the player with the right to raise', () => {
+      const state = newState();
+      state.callTruco(TrucoCall.Truco, PlayerId.Player1, emptyTable());
+
+      expect(state.getNextTrucoCallsFor(PlayerId.Player0, emptyTable())).toEqual([TrucoCall.ReTruco]);
+      expect(state.getNextTrucoCallsFor(PlayerId.Player1, emptyTable())).toEqual([]);
+    });
+
+    it('offers nothing after vale cuatro', () => {
+      const state = newState();
+      state.callTruco(TrucoCall.Truco, PlayerId.Player1, emptyTable());
+      state.callTruco(TrucoCall.ReTruco, PlayerId.Player0, emptyTable());
+      state.callTruco(TrucoCall.ValeCuatro, PlayerId.Player1, emptyTable());
+
+      expect(state.getNextTrucoCallsFor(PlayerId.Player0, emptyTable())).toEqual([]);
+      expect(state.getNextTrucoCallsFor(PlayerId.Player1, emptyTable())).toEqual([]);
+    });
+
+    it.each([PlayerId.Player0, PlayerId.Player1])(
+      'offers nothing when the opponent of player %s played a 4 in the last round',
+      (playerId) => {
+        const table = tableWithLastRoundCard(opponentOf(playerId), 4);
+
+        expect(newState().getNextTrucoCallsFor(playerId, table)).toEqual([]);
+        expect(newState().getNextTrucoCallsFor(opponentOf(playerId), table)).toEqual([
+          TrucoCall.Truco,
+        ]);
+      },
+    );
+  });
+
   describe('callTruco - a 4 played in the last round', () => {
     it.each([PlayerId.Player0, PlayerId.Player1])(
       'rejects a call after the opponent played a 4 (opponent is player %s)',

@@ -264,6 +264,66 @@ describe('EnvidoCallState', () => {
     });
   });
 
+  describe('getAvailableEnvidoCallsFor', () => {
+    const ALL = [EnvidoCall.Envido, EnvidoCall.RealEnvido, EnvidoCall.FaltaEnvido];
+
+    it.each([PlayerId.Player0, PlayerId.Player1])(
+      'offers every call to player %s before anything was called',
+      (playerId) => {
+        expect(newState().getAvailableEnvidoCallsFor(playerId, NO_CARDS_PLAYED)).toEqual(ALL);
+      },
+    );
+
+    it('offers nothing to a player who played a card when nobody called envido', () => {
+      const state = newState();
+
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player1, [false, true])).toEqual([]);
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player0, [false, true])).toEqual(ALL);
+    });
+
+    it('offers the raise to a player who played a card once envido was called', () => {
+      const state = newState();
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player0, NO_CARDS_PLAYED);
+
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player1, [true, true])).toEqual(ALL);
+    });
+
+    it('offers the raise only to the player who has to answer', () => {
+      const state = newState();
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, NO_CARDS_PLAYED);
+
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player0, NO_CARDS_PLAYED)).toEqual(ALL);
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player1, NO_CARDS_PLAYED)).toEqual([]);
+    });
+
+    it('follows the hierarchy of the calls', () => {
+      const state = newState();
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, NO_CARDS_PLAYED);
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player0, NO_CARDS_PLAYED);
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player1, NO_CARDS_PLAYED)).toEqual([
+        EnvidoCall.RealEnvido,
+        EnvidoCall.FaltaEnvido,
+      ]);
+
+      state.callEnvido(EnvidoCall.RealEnvido, PlayerId.Player1, NO_CARDS_PLAYED);
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player0, NO_CARDS_PLAYED)).toEqual([
+        EnvidoCall.FaltaEnvido,
+      ]);
+
+      state.callEnvido(EnvidoCall.FaltaEnvido, PlayerId.Player0, NO_CARDS_PLAYED);
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player1, NO_CARDS_PLAYED)).toEqual([]);
+    });
+
+    it('offers nothing once the envido was resolved', () => {
+      const state = newState();
+      state.callEnvido(EnvidoCall.Envido, PlayerId.Player1, NO_CARDS_PLAYED);
+      state.getPointsForEnvidoRejected();
+
+      expect(state.getAvailableEnvidoCallsFor(PlayerId.Player0, NO_CARDS_PLAYED)).toEqual([]);
+      expect(state.getAvailableEnvidoCalls()).toEqual([]);
+    });
+  });
+
   describe('envido resolution', () => {
     it('cannot be called again after the points were awarded', () => {
       const state = newState(33, 29);

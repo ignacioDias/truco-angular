@@ -10,8 +10,36 @@ const CALL_ORDER: Record<TrucoCall, number> = {
 export class TrucoCallState {
   private call: TrucoCall = TrucoCall.None;
   private playerToCall: PlayerId = PlayerId.Player0;
+
   public getCall(): TrucoCall {
     return this.call;
+  }
+
+  public getNextTrucoCall(): TrucoCall[] {
+    if(this.call === TrucoCall.ValeCuatro) {
+      return [];
+    }
+    if(this.call === TrucoCall.None) {
+      return [TrucoCall.Truco];
+    }
+    if(this.call === TrucoCall.Truco) {
+      return [TrucoCall.ReTruco];
+    }
+    if(this.call === TrucoCall.ReTruco) {
+      return [TrucoCall.ValeCuatro];
+    }
+    return [];
+  }
+
+  /** Calls `playerId` can make right now, following the same rules as `callTruco`. */
+  public getNextTrucoCallsFor(playerId: PlayerId, playedCards: PlayedCards): TrucoCall[] {
+    if (this.call !== TrucoCall.None && this.playerToCall !== playerId) {
+      return [];
+    }
+    if (playedCards[2][opponentOf(playerId)]?.numericValue === 4) {
+      return [];
+    }
+    return this.getNextTrucoCall();
   }
 
   public getPlayerToCall(): PlayerId {

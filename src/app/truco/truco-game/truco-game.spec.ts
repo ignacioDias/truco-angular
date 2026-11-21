@@ -1020,6 +1020,133 @@ describe('TrucoGame', () => {
     });
   });
 
+  describe('getOptionsForPlayer', () => {
+    const ALL_ENVIDO = [EnvidoCall.Envido, EnvidoCall.RealEnvido, EnvidoCall.FaltaEnvido];
+
+    it.each([PlayerId.Player0, PlayerId.Player1])(
+      'offers truco and every envido call to player %s at the start of the hand',
+      (playerId) => {
+        const game = startGame();
+
+        expect(game.getOptionsForPlayer(playerId)).toEqual([[TrucoCall.Truco], ALL_ENVIDO]);
+      },
+    );
+
+    it('offers the raise only to the player who accepted the truco', () => {
+      const game = startGame();
+      askTruco(game, TrucoCall.Truco, PlayerId.Player1);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[0]).toEqual([TrucoCall.ReTruco]);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[0]).toEqual([]);
+    });
+
+    it('offers the raise to the player who accepted even when it is not their turn', () => {
+      const game = startGame();
+      askTruco(game, TrucoCall.Truco, PlayerId.Player1);
+
+      expect(internals(game).turnTracker.getCurrentPlayer()).toBe(PlayerId.Player1);
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[0]).toEqual([TrucoCall.ReTruco]);
+    });
+
+    it('follows the truco levels up to vale cuatro', () => {
+      const game = startGame();
+      askTruco(game, TrucoCall.Truco, PlayerId.Player1);
+      askTruco(game, TrucoCall.ReTruco, PlayerId.Player0);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[0]).toEqual([TrucoCall.ValeCuatro]);
+
+      askTruco(game, TrucoCall.ValeCuatro, PlayerId.Player1);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[0]).toEqual([]);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[0]).toEqual([]);
+    });
+
+    it('offers no envido once the truco was called', () => {
+      const game = startGame();
+      askTruco(game, TrucoCall.Truco, PlayerId.Player1);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[1]).toEqual([]);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[1]).toEqual([]);
+    });
+
+    it('offers the envido raise only to the player who has to answer', () => {
+      const game = startGame();
+      game.answerEnvido(true, EnvidoCall.Envido, PlayerId.Player1);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[1]).toEqual(ALL_ENVIDO);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[1]).toEqual([]);
+    });
+
+    it('follows the envido hierarchy', () => {
+      const game = startGame();
+      game.answerEnvido(true, EnvidoCall.Envido, PlayerId.Player1);
+      game.answerEnvido(true, EnvidoCall.Envido, PlayerId.Player0);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[1]).toEqual([
+        EnvidoCall.RealEnvido,
+        EnvidoCall.FaltaEnvido,
+      ]);
+
+      game.answerEnvido(true, EnvidoCall.RealEnvido, PlayerId.Player1);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[1]).toEqual([EnvidoCall.FaltaEnvido]);
+
+      game.answerEnvido(true, EnvidoCall.FaltaEnvido, PlayerId.Player0);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[1]).toEqual([]);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[1]).toEqual([]);
+    });
+
+    it('still offers the truco while an envido is pending', () => {
+      const game = startGame();
+      game.answerEnvido(true, EnvidoCall.Envido, PlayerId.Player1);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[0]).toEqual([TrucoCall.Truco]);
+    });
+
+    it('offers no envido after it was declined', () => {
+      const game = startGame();
+      game.answerEnvido(false, EnvidoCall.None, PlayerId.Player0);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[1]).toEqual([]);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[1]).toEqual([]);
+    });
+
+    it('offers no envido after its points were awarded', () => {
+      const game = startGame();
+      game.answerEnvido(true, EnvidoCall.Envido, PlayerId.Player1);
+      game.setPointsFromEnvido();
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[1]).toEqual([]);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[1]).toEqual([]);
+    });
+
+    it('offers no envido to a player who already played a card, but still to the other one', () => {
+      const game = startGame();
+      game.playCard(PlayerId.Player1, 0);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player1)[1]).toEqual([]);
+      expect(game.getOptionsForPlayer(PlayerId.Player0)[1]).toEqual(ALL_ENVIDO);
+    });
+
+    it('offers no envido after the first round, but still the truco', () => {
+      const game = startGame();
+      playRoundAndMoveOn(game);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)).toEqual([[TrucoCall.Truco], []]);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)).toEqual([[TrucoCall.Truco], []]);
+    });
+
+    it('offers the options of a new hand after the previous one ended', () => {
+      const game = startGame();
+      askTruco(game, TrucoCall.Truco, PlayerId.Player1);
+      game.giveUpHand(PlayerId.Player0);
+
+      expect(game.getOptionsForPlayer(PlayerId.Player0)).toEqual([[TrucoCall.Truco], ALL_ENVIDO]);
+      expect(game.getOptionsForPlayer(PlayerId.Player1)).toEqual([[TrucoCall.Truco], ALL_ENVIDO]);
+    });
+  });
+
   describe('setPointsFromEnvido', () => {
     it('awards the envido to the player with more points', () => {
       const game = startGame();
